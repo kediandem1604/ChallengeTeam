@@ -1,0 +1,170 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Quản Lý Acc – Thử thách đến sập Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .account-container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:10}
+    #auth-panel{
+      max-width:460px;margin:5rem auto;text-align:center;
+      background:rgba(7,7,26,.7);border:1px solid rgba(0,242,255,.3);
+      padding:3rem 2rem;border-radius:12px;backdrop-filter:blur(16px);
+    }
+    #auth-panel h2{color:var(--c);font-family:'Playfair Display',serif;font-size:1.5rem;margin-bottom:1rem;text-shadow:0 0 10px var(--c)}
+    #auth-panel p{color:var(--t2);font-size:.9rem;margin-bottom:1.5rem}
+    #auth-panel input{
+      width:100%;padding:.8rem;margin:1rem 0;background:rgba(0,0,0,.5);
+      border:1px solid rgba(0,242,255,.3);color:var(--c);border-radius:6px;
+      text-align:center;font-family:'Be Vietnam Pro',sans-serif;letter-spacing:3px;font-size:1rem;outline:none;
+    }
+    #auth-panel input:focus{border-color:var(--c);box-shadow:0 0 10px rgba(0,242,255,.2)}
+    #auth-error{color:#f87171;font-size:.85rem;margin-top:.5rem;display:none}
+    #content-panel{display:none;overflow-x:auto}
+
+    .account-table{width:100%;border-spacing:0 8px;border-collapse:separate;margin-top:1.5rem;background:transparent;min-width:900px}
+    .account-table th{
+      color:var(--c);font-size:.8rem;font-weight:800;text-transform:uppercase;
+      padding:.9rem 1rem;letter-spacing:1.5px;background:transparent;border:none;
+    }
+    .account-table td{
+      background:rgba(7,7,26,.65);padding:.85rem 1rem;color:var(--text);font-size:.86rem;
+      border-top:1px solid rgba(0,242,255,.15);border-bottom:1px solid rgba(0,242,255,.15);
+      transition:.3s;text-align:center;
+    }
+    .account-table td:first-child{border-left:1px solid rgba(0,242,255,.15);border-radius:8px 0 0 8px}
+    .account-table td:last-child{border-right:1px solid rgba(0,242,255,.15);border-radius:0 8px 8px 0}
+    .account-table tr:hover td{background:rgba(0,242,255,.07);border-color:rgba(0,242,255,.4)}
+
+    .status-btn{
+      background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);
+      color:var(--t2);padding:.4rem .65rem;border-radius:6px;
+      cursor:pointer;transition:.3s;font-weight:700;font-size:.74rem;width:100%;
+    }
+    .status-btn.done{background:rgba(0,242,255,.12);border-color:var(--c);color:var(--c);box-shadow:0 0 8px rgba(0,242,255,.2)}
+    .status-btn.done::before{content:'✔ '}
+
+    .faction-tag{display:inline-block;padding:.22rem .65rem;border-radius:5px;font-size:.72rem;font-weight:800;border:1px solid currentColor;background:rgba(0,0,0,.25)}
+    .f-thiet-y{color:#ffd700}.f-cuu-linh{color:#d8b4fe}.f-than-tuong{color:#60a5fa}
+    .f-long-ngam{color:#34d399}.f-toai-mong{color:#22d3ee}.f-to-van{color:#f472b6}.f-huyet-ha{color:#f87171}
+
+    .input-cell input,.input-cell select{
+      background:rgba(0,0,0,.5);border:1px solid rgba(0,242,255,.3);color:var(--c);
+      padding:.4rem;border-radius:5px;width:100%;font-family:'Be Vietnam Pro',sans-serif;font-size:.8rem;
+    }
+    .action-btn{background:none;border:none;cursor:pointer;color:var(--t2);font-size:1.1rem;transition:.3s}
+    .action-btn:hover{color:#f87171;transform:scale(1.15)}
+  </style>
+
+</head>
+<body>
+
+<div id="particles-bg"></div>
+
+<nav id="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">⚔</span>
+    <span class="brand-text">Thử thách đến sập Game</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="../index.html" class="nav-link">🏠 Trang Chủ</a></li>
+    <li><a href="dungeons.html" class="nav-link sword-btn">⚔ Tiến Độ Phó Bản</a></li>
+  </ul>
+  <button class="hamburger" onclick="toggleMenu()">☰</button>
+</nav>
+
+<div class="page-header">
+  <div class="section-ornament">⸻ 🛡️ ⸻</div>
+  <h1>Danh Sách Acc</h1>
+  <p class="section-sub">Khu vực quản lý riêng tư (Yêu cầu mật khẩu)</p>
+</div>
+
+<main class="account-container">
+  
+  <!-- BẢNG NHẬP MẬT KHẨU -->
+  <div id="auth-panel">
+    <h2 style="font-family:'Playfair Display',serif; color:var(--gold); margin-bottom:1rem;">Nhập Mật Khẩu</h2>
+    <p style="color:var(--text2); font-size:0.9rem;">Vui lòng xác thực để xem danh sách tài khoản.</p>
+    <input type="password" id="auth-pwd" placeholder="********" onkeydown="if(event.key === 'Enter') checkAuth()" />
+    <button class="btn-sword" onclick="checkAuth()">
+      <span class="btn-sword-blade"></span>
+      <span class="btn-sword-text">Mở Khóa 🔓</span>
+      <span class="btn-sword-blade flip"></span>
+    </button>
+    <p id="auth-error" style="color:var(--red2); margin-top:1rem; display:none;">Mật khẩu không chính xác!</p>
+  </div>
+
+  <!-- NỘI DUNG QUẢN LÝ ACC -->
+  <div id="content-panel">
+    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:1rem;">
+      <button class="btn-sword" onclick="resetKeAccountsWeekly()" title="Reset tiến độ tuần cho Acc">
+        <span class="btn-sword-blade"></span>
+        <span class="btn-sword-text">Reset Tiến Độ Tuần 🔄</span>
+        <span class="btn-sword-blade flip"></span>
+      </button>
+      <button class="btn-sword btn-secondary" onclick="logoutAuth()">
+        <span class="btn-sword-blade"></span>
+        <span class="btn-sword-text">Đóng & Khóa 🔒</span>
+        <span class="btn-sword-blade flip"></span>
+      </button>
+    </div>
+
+    <table class="account-table">
+      <thead>
+        <tr>
+          <th style="width: 12%">Tài Khoản</th>
+          <th style="width: 12%">Mật Khẩu</th>
+          <th style="width: 12%">Ingame</th>
+          <th style="width: 10%">Phái</th>
+          <th style="width: 11%">Ngoại Các</th>
+          <th style="width: 11%">Cấm Các</th>
+          <th style="width: 11%">Bí Cảnh</th>
+          <th style="width: 11%">Động Đình</th>
+          <th style="width: 10%">Hành Động</th>
+        </tr>
+      </thead>
+      <tbody id="account-body">
+        <!-- Render từ JS -->
+      </tbody>
+      <tfoot>
+        <tr class="input-row">
+          <td class="input-cell"><input type="text" id="new-acc" placeholder="Tài khoản..." /></td>
+          <td class="input-cell"><input type="text" id="new-pwd" placeholder="Mật khẩu..." /></td>
+          <td class="input-cell"><input type="text" id="new-ingame" placeholder="Tên Ingame..." /></td>
+          <td class="input-cell">
+            <select id="new-phai">
+              <option value="Thiết Y">Thiết Y</option>
+              <option value="Tố Vấn">Tố Vấn</option>
+              <option value="Thần Tương">Thần Tương</option>
+              <option value="Toái Mộng">Toái Mộng</option>
+              <option value="Long Ngâm">Long Ngâm</option>
+              <option value="Huyết Hà">Huyết Hà</option>
+              <option value="Cửu Linh">Cửu Linh</option>
+            </select>
+          </td>
+          <td colspan="4" style="color: var(--text2); font-style: italic;">Thêm tài khoản Kẹ mới</td>
+          <td>
+            <button class="action-btn" onclick="addAccountRow()" title="Thêm Account">➕</button>
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-ornament">⸻ ⚔ KIẾM KHÁCH ĐOÀN ⚔ ⸻</div>
+  <p class="footer-copy">© 2026 Thử thách đến sập Game.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/ke-accounts.js"></script>
+
+</body>
+</html>

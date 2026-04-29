@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tiến Độ Phó Bản – Thử thách đến sập Game</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <style>
+    .dungeon-container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:10}
+    .dungeon-table{width:100%;border-spacing:0 8px;border-collapse:separate;margin-top:1.5rem;background:transparent;min-width:900px}
+    .dungeon-table th{
+      color:var(--c);font-size:.82rem;font-weight:800;text-transform:uppercase;
+      padding:.9rem 1rem;letter-spacing:1.5px;background:transparent;border:none;
+    }
+    .dungeon-table td{
+      background:rgba(7,7,26,.65);padding:.9rem 1rem;color:var(--text);font-size:.88rem;
+      border-top:1px solid rgba(0,242,255,.15);border-bottom:1px solid rgba(0,242,255,.15);
+      transition:.3s;text-align:center;
+    }
+    .dungeon-table td:first-child{border-left:1px solid rgba(0,242,255,.15);border-radius:8px 0 0 8px}
+    .dungeon-table td:last-child{border-right:1px solid rgba(0,242,255,.15);border-radius:0 8px 8px 0}
+    .dungeon-table tr:hover td{background:rgba(0,242,255,.07);border-color:rgba(0,242,255,.4);box-shadow:0 0 12px rgba(0,242,255,.08)}
+
+    .status-btn{
+      background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);
+      color:var(--t2);padding:.45rem .7rem;border-radius:6px;
+      cursor:pointer;transition:.3s;font-weight:700;font-size:.75rem;width:100%;
+    }
+    .status-btn.done{
+      background:rgba(0,242,255,.12);border-color:var(--c);color:var(--c);
+      box-shadow:0 0 8px rgba(0,242,255,.2);
+    }
+    .status-btn.done::before{content:'✔ '}
+
+    .faction-tag{display:inline-block;padding:.25rem .7rem;border-radius:5px;font-size:.73rem;font-weight:800;border:1px solid currentColor;background:rgba(0,0,0,.25)}
+    .f-thiet-y{color:#ffd700}.f-cuu-linh{color:#d8b4fe}.f-than-tuong{color:#60a5fa}
+    .f-long-ngam{color:#34d399}.f-toai-mong{color:#22d3ee}.f-to-van{color:#f472b6}.f-huyet-ha{color:#f87171}
+
+    .input-cell input,.input-cell select{
+      background:rgba(0,0,0,.5);border:1px solid rgba(0,242,255,.3);color:var(--c);
+      padding:.45rem;border-radius:5px;width:100%;font-family:'Be Vietnam Pro',sans-serif;font-size:.82rem;
+    }
+    .action-btn{background:none;border:none;cursor:pointer;color:var(--t2);font-size:1.15rem;transition:.3s}
+    .action-btn:hover{color:#f87171;transform:scale(1.15)}
+    .header-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem}
+  </style>
+</head>
+<body>
+
+<div id="particles-bg"></div>
+
+<nav id="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">⚔</span>
+    <span class="brand-text">Thử thách đến sập Game</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="../index.html" class="nav-link">🏠 Trang Chủ</a></li>
+    <li><a href="news.html" class="nav-link">📜 Tin Tức</a></li>
+    <li><a href="members.html" class="nav-link">👥 Thành Viên</a></li>
+    <li><a href="dungeons.html" class="nav-link sword-btn active">⚔ Tiến Độ Phó Bản</a></li>
+  </ul>
+  <button class="hamburger" onclick="toggleMenu()">☰</button>
+</nav>
+
+<!-- Hero Section -->
+<header class="dungeon-hero">
+  <!-- Hexagon decorations left -->
+  <div class="hex-grid left">
+    <div class="hex"></div><div class="hex"></div><div class="hex"></div>
+    <div class="hex"></div><div class="hex"></div><div class="hex"></div>
+  </div>
+  <!-- Hexagon decorations right -->
+  <div class="hex-grid right">
+    <div class="hex"></div><div class="hex"></div><div class="hex"></div>
+    <div class="hex"></div><div class="hex"></div><div class="hex"></div>
+  </div>
+
+  <!-- Holographic Pagoda -->
+  <div class="pagoda-container">
+    <div class="pagoda-glow"></div>
+    <div class="pagoda-icon">🏯</div>
+  </div>
+
+  <!-- Title Block -->
+  <div class="dungeon-hero-content">
+    <h1 class="dungeon-hero-title">Tiến Độ Phó Bản</h1>
+    <p class="dungeon-hero-sub">Theo dõi tiến trình chinh phục phó bản của các thành viên</p>
+  </div>
+
+  <!-- Floating Scroll (left) -->
+  <div class="float-deco scroll-deco">📜</div>
+
+  <!-- Compass (right) -->
+  <div class="compass-wrap">
+    <div class="compass-ring"></div>
+    <div class="compass-needle">🧭</div>
+    <div class="compass-dots">
+      <span>N</span><span>E</span><span>S</span><span>W</span>
+    </div>
+  </div>
+</header>
+
+<style>
+  .dungeon-hero {
+    min-height: 46vh; display: flex; align-items: center; justify-content: center;
+    position: relative; overflow: hidden; padding: 6rem 2rem 3rem;
+    background:
+      linear-gradient(180deg, rgba(2,2,9,.5) 0%, rgba(2,2,9,.85) 70%, rgba(2,2,9,1) 100%),
+      url('../Background.png') center/cover;
+    border-bottom: 1px solid rgba(0,242,255,.2);
+  }
+
+  /* Hexagons */
+  .hex-grid {
+    position: absolute; top: 10%; display: grid;
+    grid-template-columns: repeat(3,1fr); gap: 6px; opacity:.4;
+  }
+  .hex-grid.left { left: 10px }
+  .hex-grid.right { right: 10px }
+  .hex {
+    width: 28px; height: 28px; border: 1px solid rgba(0,242,255,.5); border-radius: 4px;
+    transform: rotate(45deg); animation: hexPulse 3s ease-in-out infinite;
+  }
+  .hex:nth-child(2n) { animation-delay: .5s; border-color: rgba(191,0,255,.5) }
+  .hex:nth-child(3n) { animation-delay: 1s }
+  @keyframes hexPulse {
+    0%,100%{opacity:.3;box-shadow:none}
+    50%{opacity:1;box-shadow:0 0 8px rgba(0,242,255,.5)}
+  }
+
+  /* Pagoda */
+  .pagoda-container {
+    position: absolute; left: 6%; top: 50%; transform: translateY(-50%);
+    text-align: center;
+  }
+  .pagoda-glow {
+    position: absolute; inset: -20px; border-radius: 50%;
+    background: radial-gradient(circle, rgba(0,242,255,.15), transparent 70%);
+    animation: pagodaGlow 4s ease-in-out infinite;
+  }
+  @keyframes pagodaGlow {
+    0%,100%{transform:scale(1);opacity:.6}
+    50%{transform:scale(1.1);opacity:1}
+  }
+  .pagoda-icon {
+    font-size: 5rem; line-height:1;
+    filter: drop-shadow(0 0 20px rgba(0,242,255,.7)) drop-shadow(0 0 40px rgba(191,0,255,.4));
+    animation: pagodaFloat 5s ease-in-out infinite;
+  }
+  @keyframes pagodaFloat {
+    0%,100%{transform:translateY(0)}
+    50%{transform:translateY(-12px)}
+  }
+
+  /* Hero title */
+  .dungeon-hero-content { text-align: center; position: relative; z-index:2 }
+  .dungeon-hero-title {
+    font-family: 'Playfair Display', serif;
+    font-size: clamp(2.4rem, 7vw, 5rem);
+    font-weight: 900; letter-spacing: 2px; line-height: 1.1;
+    background: linear-gradient(90deg, #bf00ff, #00f2ff);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 12px rgba(0,242,255,.4));
+    animation: glitchTitle 6s ease-in-out infinite;
+  }
+  .dungeon-hero-sub {
+    color: rgba(142,220,230,.7); font-size: .92rem; margin-top: .8rem;
+    letter-spacing: 1px;
+  }
+
+  /* Scroll decoration */
+  .float-deco {
+    position: fixed; font-size: 2.8rem;
+    filter: drop-shadow(0 0 12px rgba(0,242,255,.6));
+    animation: floatDeco 4s ease-in-out infinite;
+    z-index: 100;
+  }
+  .scroll-deco { bottom: 2%; left: 3%; animation-delay: .5s }
+  @keyframes floatDeco {
+    0%,100%{transform:translateY(0) rotate(-5deg)}
+    50%{transform:translateY(-10px) rotate(5deg)}
+  }
+
+  /* Compass */
+  .compass-wrap {
+    position: fixed; bottom: 3%; right: 3%;
+    width: 72px; height: 72px; display: flex; align-items: center;
+    justify-content: center; z-index: 100;
+  }
+  .compass-ring {
+    position: absolute; inset: 0; border-radius: 50%;
+    border: 2px solid rgba(0,242,255,.4);
+    box-shadow: 0 0 14px rgba(0,242,255,.3), inset 0 0 14px rgba(0,242,255,.1);
+    animation: compassSpin 8s linear infinite;
+  }
+  .compass-ring::before {
+    content: ''; position: absolute; inset: 6px; border-radius: 50%;
+    border: 1px dashed rgba(191,0,255,.4);
+    animation: compassSpin 4s linear infinite reverse;
+  }
+  @keyframes compassSpin { to { transform: rotate(360deg) } }
+  .compass-needle {
+    font-size: 2.2rem; position: relative; z-index: 1;
+    filter: drop-shadow(0 0 10px rgba(0,242,255,.8));
+    animation: compassSpin 8s linear infinite;
+  }
+  .compass-dots {
+    position: absolute; inset: -18px; pointer-events: none;
+    display: flex; align-items: center; justify-content: center;
+  }
+  .compass-dots span {
+    position: absolute; font-size: .6rem; font-weight: 900;
+    color: rgba(0,242,255,.8); letter-spacing: 0;
+  }
+  .compass-dots span:nth-child(1){ top: 0; left:50%; transform:translateX(-50%) }
+  .compass-dots span:nth-child(2){ right:0; top:50%; transform:translateY(-50%) }
+  .compass-dots span:nth-child(3){ bottom:0; left:50%; transform:translateX(-50%) }
+  .compass-dots span:nth-child(4){ left:0; top:50%; transform:translateY(-50%) }
+</style>
+
+<main class="dungeon-container">
+  <div class="header-actions">
+    <a href="ke-accounts.html" class="btn-sword btn-secondary">
+      <span class="btn-sword-blade"></span>
+      <span class="btn-sword-text">List acc 🛡️</span>
+      <span class="btn-sword-blade flip"></span>
+    </a>
+    <button class="btn-sword" onclick="resetDungeonsWeekly()" title="Chỉ giữ lại Tên và Phái, reset toàn bộ tiến độ">
+      <span class="btn-sword-blade"></span>
+      <span class="btn-sword-text">Reset Tiến Độ Tuần 🔄</span>
+      <span class="btn-sword-blade flip"></span>
+    </button>
+  </div>
+
+  <div style="overflow-x: auto;">
+    <table class="dungeon-table" id="dungeon-table">
+      <thead>
+        <tr>
+          <th style="width: 15%">Ingame</th>
+          <th style="width: 15%">Phái</th>
+          <th style="width: 15%">Ngoại Các</th>
+          <th style="width: 15%">Cấm Các</th>
+          <th style="width: 15%">Bí Cảnh</th>
+          <th style="width: 15%">Động Đình + Kiếm Mộng</th>
+          <th style="width: 10%">Hành Động</th>
+        </tr>
+      </thead>
+      <tbody id="dungeon-body">
+        <!-- Render from JS -->
+      </tbody>
+      <tfoot>
+        <tr>
+          <td colspan="7" style="text-align:center;padding:1rem;color:var(--t2);font-size:.82rem;font-style:italic;">
+            ⚡ Danh sách được đồng bộ tự động từ trang <a href="members.html" style="color:var(--c)">Thành Viên</a>. Thêm thành viên mới tại đó.
+          </td>
+        </tr>
+      </tfoot>
+    </table>
+  </div>
+</main>
+
+<footer class="footer">
+  <div class="footer-ornament">⸻ ⚔ KIẾM KHÁCH ĐOÀN ⚔ ⸻</div>
+  <p class="footer-copy">© 2026 Thử thách đến sập Game.</p>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/dungeons.js"></script>
+<script>
+  function toggleMenu() {
+    document.querySelector('.nav-links').classList.toggle('open');
+  }
+</script>
+</body>
+</html>

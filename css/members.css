@@ -1,0 +1,10 @@
+/* ═══════════════════════════════════════════════
+   MEMBERS PAGE CSS
+═══════════════════════════════════════════════ */
+
+/* Add specific styles for the members page here if needed. 
+   Currently utilizing the global .member-card and .wuxia-form styles from style.css */
+
+.members-grid {
+  margin-top: 2rem;
+}

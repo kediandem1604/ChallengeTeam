@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thử thách đến sập Game – Bang Hội Kiếm Hiệp</title>
+  <meta name="description" content="Trang web chính thức của bang hội kiếm hiệp - nơi hội tụ anh hùng thiên hạ." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="css/style.css" />
+</head>
+
+<body>
+
+  <!-- ═══════ PARTICLES BACKGROUND ═══════ -->
+  <div id="particles-bg"></div>
+
+  <!-- ═══════ NAVIGATION ═══════ -->
+  <nav id="navbar">
+    <div class="nav-brand">
+      <span class="brand-icon">⚔</span>
+      <span class="brand-text">Thử thách đến sập Game</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="index.html" class="nav-link active" id="nav-home">🏠 Trang Chủ</a></li>
+      <li><a href="pages/news.html" class="nav-link" id="nav-news">📜 Tin Tức</a></li>
+      <li><a href="pages/members.html" class="nav-link" id="nav-members">👥 Thành Viên</a></li>
+      <li><a href="pages/dungeons.html" class="nav-link sword-btn" id="nav-excel">⚔ Tiến Độ Phó Bản</a></li>
+    </ul>
+    <button class="hamburger" id="hamburger" onclick="toggleMenu()">☰</button>
+  </nav>
+
+  <!-- ═══════ HERO SECTION ═══════ -->
+  <header class="hero" id="hero">
+    <div class="hero-overlay"></div>
+    <div class="falling-petals" id="petals"></div>
+    <div class="hero-content">
+      <div class="hero-ornament top">⸻ ✦ ⸻</div>
+      <div class="sword-divider">
+        <span class="sword-left">🗡</span>
+        <span class="glow-title">THỬ THÁCH ĐẾN SẬP GAME</span>
+        <span class="sword-right">🗡</span>
+      </div>
+      <p class="hero-subtitle">劍 客 團 — Nơi Anh Hùng Hội Tụ, Kiếm Phách Vang Danh</p>
+      <p class="hero-quote">"Nhất kiếm trấn thiên hạ, vạn cổ lưu anh danh"</p>
+      <div class="hero-btns">
+        <a href="pages/news.html" class="btn-sword" id="btn-news-hero">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Tin Tức Giang Hồ</span>
+          <span class="btn-sword-blade flip"></span>
+        </a>
+        <a href="pages/members.html" class="btn-sword btn-secondary" id="btn-members-hero">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Thành Viên</span>
+          <span class="btn-sword-blade flip"></span>
+        </a>
+      </div>
+      <div class="hero-ornament bottom">⸻ ✦ ⸻</div>
+    </div>
+    <div class="scroll-indicator">
+      <span>Cuộn xuống</span>
+      <div class="scroll-arrow">↓</div>
+    </div>
+  </header>
+
+  <!-- ═══════ EXCEL QUICK ACCESS ═══════ -->
+  <section class="excel-banner" id="excel-section">
+    <div class="container">
+      <div class="excel-card">
+        <div class="excel-icon">⚔️</div>
+        <div class="excel-info">
+          <h3>Tiến Độ Phó Bản Bang Hội</h3>
+          <p>Theo dõi tiến trình chinh phục và thành tích phó bản của các thành viên</p>
+        </div>
+        <a href="pages/dungeons.html" class="btn-sword excel-btn" id="btn-excel-main">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Xem Tiến Độ ⚔</span>
+          <span class="btn-sword-blade flip"></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ LATEST NEWS ═══════ -->
+  <section class="section news-section" id="latest-news">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-ornament">⸻ ⚔ ⸻</div>
+        <h2 class="section-title">Tin Tức Giang Hồ</h2>
+        <p class="section-sub">Những sự kiện mới nhất trong bang hội</p>
+      </div>
+      <div class="news-grid" id="news-grid">
+        <!-- Loaded from JS -->
+        <div class="news-empty" id="news-placeholder">
+          <div class="empty-icon">📜</div>
+          <p>Chưa có tin tức nào. <a href="pages/news.html">Thêm bài viết đầu tiên!</a></p>
+        </div>
+      </div>
+      <div class="section-footer">
+        <a href="pages/news.html" class="btn-sword" id="btn-all-news">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Xem Tất Cả Tin Tức</span>
+          <span class="btn-sword-blade flip"></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ LATEST VIDEOS ═══════ -->
+  <section class="section video-section" id="latest-videos">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-ornament">⸻ ⚔ ⸻</div>
+        <h2 class="section-title">Chiến Tích Video</h2>
+        <p class="section-sub">Những khoảnh khắc đáng nhớ của bang hội</p>
+      </div>
+      <div class="video-grid" id="video-grid">
+        <div class="news-empty" id="video-placeholder">
+          <div class="empty-icon">🎬</div>
+          <p>Chưa có video nào. <a href="pages/news.html">Thêm video đầu tiên!</a></p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ MEMBERS TEASER ═══════ -->
+  <section class="section members-teaser" id="members-section">
+    <div class="container">
+      <div class="section-header">
+        <div class="section-ornament">⸻ 👥 ⸻</div>
+        <h2 class="section-title">Anh Hùng Tụ Nghĩa</h2>
+        <p class="section-sub">Gương mặt tiêu biểu của team</p>
+      </div>
+      <div class="members-preview-grid" id="members-preview">
+        <!-- Loaded from JS -->
+        <div class="news-empty">
+          <div class="empty-icon">👥</div>
+          <p>Chưa có hồ sơ nào. <a href="pages/members.html">Thêm thành viên đầu tiên!</a></p>
+        </div>
+      </div>
+      <div class="section-footer">
+        <a href="pages/members.html" class="btn-sword" id="btn-members-main">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Tất Cả Thành Viên ⚔</span>
+          <span class="btn-sword-blade flip"></span>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══════ FOOTER ═══════ -->
+  <footer class="footer" id="footer">
+    <div class="footer-ornament">⸻ ⚔ KIẾM KHÁCH ĐOÀN ⚔ ⸻</div>
+    <p class="footer-quote">"Thiên hạ anh hùng, hội tụ một nơi"</p>
+    <p class="footer-copy">© 2026 Thử thách đến sập Game. All rights reserved.</p>
+  </footer>
+
+  <!-- ═══════ ADMIN PANEL (floating) ═══════ -->
+  <button class="admin-toggle" id="admin-toggle" onclick="toggleAdmin()" title="Quản trị viên">⚙</button>
+
+  <div class="admin-panel" id="admin-panel">
+    <div class="admin-header">
+      <h3>⚙ Quản Trị Viên</h3>
+      <button onclick="toggleAdmin()">✕</button>
+    </div>
+    <div class="admin-body">
+      <div class="admin-section">
+        <label>🔗 Link Tiến Độ Phó Bản (Excel)</label>
+        <input type="url" id="excel-url-input" placeholder="Nhập link Google Sheets / Excel..." />
+        <button class="btn-admin" id="btn-save-excel" onclick="saveExcelLink()">Lưu Link</button>
+      </div>
+      <div class="admin-links">
+        <a href="pages/news.html#add" class="btn-admin">📝 Thêm Bài Viết</a>
+        <a href="pages/members.html#add" class="btn-admin">👥 Quản Lý Thành Viên</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/supabase-config.js"></script>
+  <script src="js/data.js"></script>
+  <script src="js/main.js"></script>
+</body>
+
+</html>

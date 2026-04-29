@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Tin Tức Giang Hồ – Thử thách đến sập Game</title>
+  <meta name="description" content="Tin tức, sự kiện mới nhất của bang hội Thử thách đến sập Game." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/news.css" />
+</head>
+<body>
+
+<div id="particles-bg"></div>
+
+<nav id="navbar">
+  <div class="nav-brand">
+    <span class="brand-icon">⚔</span>
+    <span class="brand-text">Thử thách đến sập Game</span>
+  </div>
+  <ul class="nav-links">
+    <li><a href="../index.html" class="nav-link" id="nav-home">🏠 Trang Chủ</a></li>
+    <li><a href="news.html" class="nav-link active" id="nav-news">📜 Tin Tức</a></li>
+    <li><a href="members.html" class="nav-link" id="nav-members">👥 Thành Viên</a></li>
+    <li><a href="dungeons.html" class="nav-link sword-btn">⚔ Tiến Độ Phó Bản</a></li>
+  </ul>
+  <button class="hamburger" onclick="toggleMenu()">☰</button>
+</nav>
+
+<!-- PAGE HEADER -->
+<div class="page-header">
+  <div class="section-ornament">⸻ ⚔ ⸻</div>
+  <h1>Tin Tức Giang Hồ</h1>
+  <p class="section-sub">Những sự kiện nổi bật trong bang hội</p>
+</div>
+
+<main class="container news-page" style="padding: 3rem 1.5rem;">
+
+  <!-- ADD POST FORM -->
+  <section class="news-add-section" id="add">
+    <div class="section-header">
+      <div class="section-ornament">⸻ ✦ ⸻</div>
+      <h2 class="section-title" style="font-size:1.5rem;">📝 Thêm Bài Viết Mới</h2>
+    </div>
+    <div class="wuxia-form" id="news-form-wrap">
+      <div class="form-tabs">
+        <button class="tab-btn active" id="tab-post" onclick="switchTab('post')">📜 Bài Viết</button>
+        <button class="tab-btn" id="tab-video" onclick="switchTab('video')">🎬 Video</button>
+      </div>
+
+      <!-- POST TAB -->
+      <div id="panel-post">
+        <div class="form-group">
+          <label>Tiêu Đề Bài Viết *</label>
+          <input type="text" id="post-title" placeholder="Nhập tiêu đề..." />
+        </div>
+        <div class="form-group">
+          <label>Thể Loại</label>
+          <select id="post-tag">
+            <option value="TIN TỨC">📰 Tin Tức</option>
+            <option value="SỰ KIỆN">⚔ Sự Kiện</option>
+            <option value="THÔNG BÁO">📣 Thông Báo</option>
+            <option value="CHIẾN TÍCH">🏆 Chiến Tích</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Tên Tác Giả</label>
+          <input type="text" id="post-author" placeholder="Tên hoặc biệt danh..." />
+        </div>
+        <div class="form-group">
+          <label>Ảnh Minh Họa (URL hoặc tải lên)</label>
+          <input type="url" id="post-img-url" placeholder="https://..." />
+          <p class="form-hint">Hoặc tải ảnh lên:</p>
+          <input type="file" id="post-img-file" accept="image/*" onchange="handleImgFile(this)" />
+          <div id="post-img-preview" class="img-preview" style="display:none;"></div>
+        </div>
+        <div class="form-group">
+          <label>Nội Dung *</label>
+          <textarea id="post-content" rows="6" placeholder="Nội dung bài viết..."></textarea>
+        </div>
+        <button class="btn-sword" onclick="submitPost()">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Đăng Bài ⚔</span>
+          <span class="btn-sword-blade flip"></span>
+        </button>
+      </div>
+
+      <!-- VIDEO TAB -->
+      <div id="panel-video" style="display:none;">
+        <div class="form-group">
+          <label>Tiêu Đề Video *</label>
+          <input type="text" id="vid-title" placeholder="Nhập tiêu đề..." />
+        </div>
+        <div class="form-group">
+          <label>Nguồn Video</label>
+          <select id="vid-type" onchange="toggleVidSource()">
+            <option value="youtube">🎥 YouTube (paste link)</option>
+            <option value="upload">📁 Upload file video</option>
+          </select>
+        </div>
+        <div id="vid-url-wrap" class="form-group">
+          <label>Link YouTube</label>
+          <input type="url" id="vid-url" placeholder="https://youtube.com/watch?v=..." />
+          <p class="form-hint">Hỗ trợ: youtube.com/watch?v=... hoặc youtu.be/...</p>
+        </div>
+        <div id="vid-file-wrap" class="form-group" style="display:none;">
+          <label>File Video</label>
+          <input type="file" id="vid-file" accept="video/*" onchange="handleVideoFile(this)" />
+          <p class="form-hint">Chú ý: file lưu local, không hoạt động trên GitHub Pages. Ưu tiên dùng YouTube.</p>
+        </div>
+        <button class="btn-sword" onclick="submitVideo()">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Thêm Video ⚔</span>
+          <span class="btn-sword-blade flip"></span>
+        </button>
+      </div>
+    </div>
+  </section>
+
+  <!-- DIVIDER -->
+  <div style="text-align:center; margin: 3rem 0; color:var(--gold3); letter-spacing:8px;">⸻ ⚔ ⸻</div>
+
+  <!-- POSTS LIST -->
+  <section>
+    <div class="section-header" style="margin-bottom:1.5rem;">
+      <h2 class="section-title" style="font-size:1.5rem;">📜 Tất Cả Bài Viết</h2>
+    </div>
+    <div class="news-grid" id="all-posts-grid">
+      <div class="news-empty" id="posts-empty">
+        <div class="empty-icon">📜</div>
+        <p>Chưa có bài viết nào. Hãy thêm bài viết đầu tiên!</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- VIDEOS LIST -->
+  <section style="margin-top:4rem;">
+    <div class="section-header" style="margin-bottom:1.5rem;">
+      <div class="section-ornament">⸻ ⚔ ⸻</div>
+      <h2 class="section-title" style="font-size:1.5rem;">🎬 Tất Cả Video</h2>
+    </div>
+    <div class="video-grid" id="all-videos-grid">
+      <div class="news-empty" id="videos-empty">
+        <div class="empty-icon">🎬</div>
+        <p>Chưa có video nào.</p>
+      </div>
+    </div>
+  </section>
+</main>
+
+<!-- POST DETAIL MODAL -->
+<div class="modal-overlay" id="post-modal" onclick="closeModal(event)">
+  <div class="modal-box">
+    <button class="modal-close" onclick="document.getElementById('post-modal').classList.remove('open')">✕</button>
+    <div id="modal-content"></div>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="footer-ornament">⸻ ⚔ KIẾM KHÁCH ĐOÀN ⚔ ⸻</div>
+  <p class="footer-quote">"Thiên hạ anh hùng, hội tụ một nơi"</p>
+  <p class="footer-copy">© 2026 Thử thách đến sập Game.</p>
+</footer>
+
+<!-- Supabase SDK -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="../js/supabase-config.js"></script>
+<script src="../js/data.js"></script>
+<script src="../js/news.js"></script>
+</body>
+</html>

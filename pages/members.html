@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="vi">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Thành Viên – Thử thách đến sập Game</title>
+  <meta name="description" content="Danh sách thành viên bang hội Thử thách đến sập Game." />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link
+    href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap"
+    rel="stylesheet" />
+  <link rel="stylesheet" href="../css/style.css" />
+  <link rel="stylesheet" href="../css/members.css" />
+  <!-- Vis Network for Graph -->
+  <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+</head>
+
+<body>
+
+  <div id="particles-bg"></div>
+
+  <nav id="navbar">
+    <div class="nav-brand">
+      <span class="brand-icon">⚔</span>
+      <span class="brand-text">Thử thách đến sập Game</span>
+    </div>
+    <ul class="nav-links">
+      <li><a href="../index.html" class="nav-link">🏠 Trang Chủ</a></li>
+      <li><a href="news.html" class="nav-link">📜 Tin Tức</a></li>
+      <li><a href="members.html" class="nav-link active">👥 Thành Viên</a></li>
+      <li><a href="dungeons.html" class="nav-link sword-btn">⚔ Tiến Độ Phó Bản</a></li>
+    </ul>
+    <button class="hamburger" onclick="toggleMenu()">☰</button>
+  </nav>
+
+  <div class="page-header">
+    <div class="section-ornament">⸻ 👥 ⸻</div>
+    <h1>Anh Hùng Tụ Nghĩa</h1>
+    <p class="section-sub">Những gương mặt tiêu biểu của team</p>
+  </div>
+
+  <main class="container" style="padding: 3rem 1.5rem; max-width: 1200px;">
+
+    <!-- PUBLIC LIST (MẠNG LƯỚI QUAN HỆ) -->
+    <section id="public-section">
+      <div class="section-header" style="margin-bottom:1.5rem;">
+        <h2 class="section-title" style="font-size:1.5rem;">🌌 Mạng Lưới Bang Hội</h2>
+        <p class="section-sub">Bản đồ liên kết nhân mạch của Kiếm Khách Đoàn</p>
+      </div>
+
+      <div id="network-graph"
+        style="width: 100%; height: 600px; background: rgba(2,2,9,0.7); border: 1px solid rgba(0,242,255,0.3); border-radius: 12px; box-shadow: 0 0 20px rgba(0,242,255,0.1); margin-bottom: 2rem;">
+      </div>
+
+      <div style="text-align:center;margin-bottom:2rem;display:flex;justify-content:center;gap:1rem;flex-wrap:wrap;">
+        <button class="btn-sword" onclick="zoomNetworkIn()" style="padding:0.5rem 1rem;">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Phóng To ➕</span>
+          <span class="btn-sword-blade flip"></span>
+        </button>
+        <button class="btn-sword btn-secondary" onclick="resetNetworkZoom()" style="padding:0.5rem 1rem;">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Khôi Phục Góc Nhìn 🔍</span>
+          <span class="btn-sword-blade flip"></span>
+        </button>
+        <button class="btn-sword" onclick="zoomNetworkOut()" style="padding:0.5rem 1rem;">
+          <span class="btn-sword-blade"></span>
+          <span class="btn-sword-text">Thu Nhỏ ➖</span>
+          <span class="btn-sword-blade flip"></span>
+        </button>
+      </div>
+    </section>
+
+    <!-- DIVIDER -->
+    <div style="text-align:center;margin:3rem 0;color:var(--gold3);letter-spacing:8px;">⸻ ✦ ⸻</div>
+
+    <!-- RELATIONSHIP FORM -->
+    <section id="relation-section">
+      <div class="section-header" style="margin-bottom:1.5rem;">
+        <div class="section-ornament">⸻ 🔗 ⸻</div>
+        <h2 class="section-title" style="font-size:1.5rem;">Tạo Liên Kết</h2>
+      </div>
+      <div class="wuxia-form">
+        <div style="display:flex; gap:1rem; flex-wrap:wrap; align-items:flex-end;">
+          <div class="form-group" style="flex:1; min-width:200px;">
+            <label>Người thứ nhất</label>
+            <select id="rel-source"></select>
+          </div>
+          <div class="form-group" style="flex:1; min-width:150px;">
+            <label>Mối Quan Hệ</label>
+            <select id="rel-type">
+              <option value="sudo">📜 Sư Đồ</option>
+              <option value="triki">🌸 Tri Kỉ</option>
+              <option value="banthan">🤝 Bạn Thân</option>
+              <option value="kimlan">⚔️ Kim Lan</option>
+              <option value="clone">🎭 Clone</option>
+              <option value="nhat">🏕️ Nhặt từ PB</option>
+            </select>
+          </div>
+          <div class="form-group" style="flex:1; min-width:200px;">
+            <label>Người thứ hai</label>
+            <select id="rel-target"></select>
+          </div>
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+          <button class="btn-sword" onclick="addRelation()">
+            <span class="btn-sword-blade"></span>
+            <span class="btn-sword-text">Kết Nối 🔗</span>
+            <span class="btn-sword-blade flip"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+    <!-- MEMBER PROFILE MODAL -->
+    <div id="member-modal"
+      style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.8); z-index:9999; justify-content:center; align-items:center;">
+      <div id="modal-card"
+        style="background:rgba(7,7,26,.85); backdrop-filter:blur(14px); border:1px solid var(--c); border-radius:12px; padding:2rem; max-width:400px; width:90%; position:relative; text-align:center; box-shadow: 0 0 20px rgba(0,242,255,0.3);">
+        <button onclick="document.getElementById('member-modal').style.display='none'"
+          style="position:absolute; top:10px; right:15px; background:none; border:none; color:var(--text); font-size:1.5rem; cursor:pointer; z-index:10;">&times;</button>
+        <div id="modal-content"></div>
+      </div>
+    </div>
+
+    <!-- DIVIDER -->
+    <div style="text-align:center;margin:3rem 0;color:var(--gold3);letter-spacing:8px;">⸻ ✦ ⸻</div>
+
+    <!-- ADD FORM -->
+    <section id="add">
+      <div class="section-header" style="margin-bottom:1.5rem;">
+        <div class="section-ornament">⸻ ⚙ ⸻</div>
+        <h2 class="section-title" style="font-size:1.5rem;">📝 Thêm Thành Viên</h2>
+        <p class="section-sub">Tạo hồ sơ mới cho thành viên</p>
+      </div>
+
+      <div class="wuxia-form">
+        <div class="form-group">
+          <label>Tên / Biệt Danh *</label>
+          <input type="text" id="mem-name" placeholder="Ví dụ: Lãnh Huyết..." />
+        </div>
+        <div class="form-group">
+          <label>Ingame (Tên trong game)</label>
+          <input type="text" id="mem-igame" placeholder="Tên nhân vật..." />
+        </div>
+        <div class="form-group">
+          <label>Phái *</label>
+          <select id="mem-faction">
+            <option value="Thiết Y">🛡 Thiết Y</option>
+            <option value="Tố Vấn">🌸 Tố Vấn</option>
+            <option value="Thần Tương">⚔ Thần Tương</option>
+            <option value="Toái Mộng">🗡 Toái Mộng (Toái Lỏ)</option>
+            <option value="Long Ngâm">🐉 Long Ngâm (Long Lỡ)</option>
+            <option value="Huyết Hà">🩸 Huyết Hà</option>
+            <option value="Cửu Linh">🔮 Cửu Linh</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label>Avatar (Tải ảnh lên)</label>
+          <input type="file" id="mem-avatar-file" accept="image/*" onchange="handleAvatarUpload(this)" />
+          <div id="avatar-preview-box" style="display:none; margin-top:1rem;">
+            <img id="avatar-preview-img" src=""
+              style="width:80px; height:80px; border-radius:50%; border:2px solid var(--gold3); object-fit:cover;">
+          </div>
+          <p class="form-hint">Chọn ảnh từ máy tính của bạn</p>
+        </div>
+        <div class="form-group">
+          <label>Mã VIP (Bí ẩn) ✨</label>
+          <input type="text" id="mem-vip" placeholder="Nhập mã bí mật nếu bạn là VIP..." />
+          <p class="form-hint" style="color:var(--pk);">Đặc quyền: Tên nhấp nháy, hiệu ứng cánh bướm.</p>
+        </div>
+        <div style="text-align: center; margin-top: 2rem;">
+          <button class="btn-sword" onclick="submitMember()">
+            <span class="btn-sword-blade"></span>
+            <span class="btn-sword-text">Thêm Hồ Sơ ⚔</span>
+            <span class="btn-sword-blade flip"></span>
+          </button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer class="footer">
+    <div class="footer-ornament">⸻ ⚔ KIẾM KHÁCH ĐOÀN ⚔ ⸻</div>
+    <p class="footer-quote">"Thiên hạ anh hùng, hội tụ một nơi"</p>
+    <p class="footer-copy">© 2026 Thử thách đến sập Game.</p>
+  </footer>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="../js/supabase-config.js"></script>
+  <script src="../js/data.js"></script>
+  <script src="../js/members.js"></script>
+</body>
+
+</html>

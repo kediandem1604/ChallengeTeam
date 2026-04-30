@@ -57,6 +57,7 @@ async function submitMember() {
 // ─── RENDER DANH SÁCH ───
 // ─── RENDER MẠNG LƯỚI QUAN HỆ (VIS-NETWORK) ───
 let network = null;
+let networkEdges = null;
 let allMembersCache = [];
 
 // ─── HONEYCOMB STATE ───
@@ -250,16 +251,21 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
       smooth = { type: 'curvedCW', roundness: roundness };
     }
 
+    const isKimLan = r.type === 'kimlan' || r.type === 'kimlancu';
     return {
       id: r.id, from: r.source_id, to: r.target_id,
+      rel_type: r.type,
       label: conf.label,
       color: { color: conf.color, highlight: '#ffffff' },
       dashes: conf.dashes,
       font: { color: conf.color, size: 12, strokeWidth: 2, strokeColor: '#000', align: 'horizontal' },
       arrows: (r.type === 'sudo' || r.type === 'clone') ? 'to' : '',
-      smooth: smooth
+      smooth: smooth,
+      hidden: isKimLan
     };
   }));
+
+  networkEdges = edges;
 
   const options = {
     physics: hasSaved ? false : {
@@ -295,13 +301,29 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
   // Click node → hiện modal; click edge → xóa liên kết
   network.on('click', params => {
     if (params.nodes.length > 0) {
+      updateKimLanVisibility(params.nodes[0]);
       showMemberModal(params.nodes[0]);
-    } else if (params.edges.length > 0) {
-      if (confirm('Bạn muốn xóa liên kết này?')) {
-        DB.deleteRelation(params.edges[0]).then(() => renderMembers());
+    } else {
+      updateKimLanVisibility(null);
+      if (params.edges.length > 0) {
+        if (confirm('Bạn muốn xóa liên kết này?')) {
+          DB.deleteRelation(params.edges[0]).then(() => renderMembers());
+        }
       }
     }
   });
+}
+
+function updateKimLanVisibility(focusedNodeId) {
+  if (!networkEdges) return;
+  const updates = [];
+  networkEdges.forEach(edge => {
+    if (edge.rel_type === 'kimlan' || edge.rel_type === 'kimlancu') {
+      const isConnected = focusedNodeId && (String(edge.from) === String(focusedNodeId) || String(edge.to) === String(focusedNodeId));
+      updates.push({ id: edge.id, hidden: !isConnected });
+    }
+  });
+  if (updates.length > 0) networkEdges.update(updates);
 }
 
 function resetNetworkZoom() {
@@ -325,6 +347,7 @@ function focusOnMember(id) {
   if (network) {
     network.focus(id, { scale: 1.2, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
     network.selectNodes([id]);
+    updateKimLanVisibility(id);
   }
   const fdd = document.getElementById('focus-dropdown');
   if (fdd) fdd.style.display = 'none';

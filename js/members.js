@@ -100,7 +100,8 @@ function generateHexImage(m, cb) {
   const canvas = document.createElement('canvas');
   canvas.width = canvas.height = S;
   const ctx = canvas.getContext('2d');
-  const borderCol = m.isVip ? '#bf00ff' : (factionColors[m.faction] || '#00f2ff');
+  const fcolor = factionColors[m.faction] || '#00f2ff';
+  const borderCol = fcolor;
 
   function hexPath(radius) {
     ctx.beginPath();
@@ -118,8 +119,8 @@ function generateHexImage(m, cb) {
   function finish() {
     // Glow nếu VIP
     if (m.isVip) {
-      hexPath(r); ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2;
-      ctx.shadowColor = '#bf00ff'; ctx.shadowBlur = 8; ctx.stroke();
+      hexPath(r); ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 2;
+      ctx.shadowColor = fcolor; ctx.shadowBlur = 12; ctx.stroke();
       ctx.shadowBlur = 0;
     }
     const url = canvas.toDataURL();
@@ -208,7 +209,7 @@ async function renderMembers(customItems = null) {
 function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImages) {
   const nodes = new vis.DataSet(allItems.map(m => {
     const sp = savedPos[String(m.id)];
-    const fcolor = m.isVip ? '#ff00ff' : (factionColors[m.faction] || '#00f2ff');
+    const fcolor = factionColors[m.faction] || '#00f2ff';
     return {
       id: m.id,
       shape: 'image',

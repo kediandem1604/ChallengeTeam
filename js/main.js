@@ -108,13 +108,26 @@ async function renderHomeNews(customItems = null) {
         <div class="news-card-title">${item.title}</div>
         <div class="news-card-excerpt">${item.content}</div>
       </div>
-      <div class="news-card-footer">
-        <span>✦ ${item.author || 'Vô Danh'}</span>
-        <span>${item.date}</span>
+      <div class="news-card-footer" style="display:flex; justify-content:space-between; align-items:center;">
+        <span style="font-size:0.85rem; color:var(--t2);">✦ ${item.author || 'Vô Danh'} &nbsp;·&nbsp; ${item.date}</span>
+        <div style="font-size:0.85rem; display:flex; gap:10px;">
+          <span id="home-like-${item.id}" style="color:var(--pk);">❤️ ⋯</span>
+          <span id="home-comment-${item.id}" style="color:var(--c);">💬 ⋯</span>
+        </div>
       </div>
     `;
     card.onclick = () => openModal(item);
     grid.appendChild(card);
+
+    // Fetch counts asynchronously
+    DB.getNewsLikes(item.id).then(c => {
+      const el = document.getElementById(`home-like-${item.id}`);
+      if (el) el.innerHTML = `❤️ ${c}`;
+    });
+    DB.getComments(item.id).then(c => {
+      const el = document.getElementById(`home-comment-${item.id}`);
+      if (el) el.innerHTML = `💬 ${c.length}`;
+    });
   });
 }
 

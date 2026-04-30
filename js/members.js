@@ -208,6 +208,7 @@ async function renderMembers(customItems = null) {
 function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImages) {
   const nodes = new vis.DataSet(allItems.map(m => {
     const sp = savedPos[String(m.id)];
+    const fcolor = m.isVip ? '#ff00ff' : (factionColors[m.faction] || '#00f2ff');
     return {
       id: m.id,
       shape: 'image',
@@ -216,10 +217,11 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
       label: `${m.igame || m.name}\n[${m.faction}]`,
       color: {
         border: 'transparent', background: 'transparent',
-        highlight: { border: 'rgba(255,255,255,0.6)', background: 'transparent' }
+        highlight: { border: fcolor, background: 'transparent' }
       },
       borderWidth: 0,
-      font: { color: '#e0f7fa', face: 'Be Vietnam Pro', size: 13, strokeWidth: 2, strokeColor: '#000' },
+      font: { color: fcolor, face: 'Be Vietnam Pro', size: 13, strokeWidth: 2, strokeColor: '#000' },
+      shadow: { enabled: true, color: fcolor, size: 15, x: 0, y: 0 },
       x: sp ? sp.x : undefined,
       y: sp ? sp.y : undefined
     };
@@ -264,7 +266,7 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
       maxVelocity: 50, solver: 'forceAtlas2Based', timestep: 0.35,
       stabilization: { iterations: 150 }
     },
-    nodes: { shadow: { enabled: true, color: 'rgba(0,242,255,0.4)', size: 12, x: 0, y: 0 } },
+    nodes: {},
     edges: { smooth: { type: 'continuous' } },
     interaction: { dragView: true, zoomView: false, hover: true, tooltipDelay: 200 }
   };

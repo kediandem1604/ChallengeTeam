@@ -301,10 +301,10 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
   // Click node → hiện modal; click edge → xóa liên kết
   network.on('click', params => {
     if (params.nodes.length > 0) {
-      updateKimLanVisibility(params.nodes[0]);
+      updateKimLanVisibility();
       showMemberModal(params.nodes[0]);
     } else {
-      updateKimLanVisibility(null);
+      updateKimLanVisibility();
       if (params.edges.length > 0) {
         if (confirm('Bạn muốn xóa liên kết này?')) {
           DB.deleteRelation(params.edges[0]).then(() => renderMembers());
@@ -312,15 +312,25 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
       }
     }
   });
+
+  network.on('hoverNode', params => {
+    updateKimLanVisibility(params.node);
+  });
+  
+  network.on('blurNode', () => {
+    updateKimLanVisibility();
+  });
 }
 
-function updateKimLanVisibility(focusedNodeId) {
-  if (!networkEdges) return;
+function updateKimLanVisibility(hoverNodeId = null) {
+  if (!networkEdges || !network) return;
+  const selectedNodes = network.getSelectedNodes() || [];
   const updates = [];
   networkEdges.forEach(edge => {
     if (edge.rel_type === 'kimlan' || edge.rel_type === 'kimlancu') {
-      const isConnected = focusedNodeId && (String(edge.from) === String(focusedNodeId) || String(edge.to) === String(focusedNodeId));
-      updates.push({ id: edge.id, hidden: !isConnected });
+      const isHovered = hoverNodeId && (String(edge.from) === String(hoverNodeId) || String(edge.to) === String(hoverNodeId));
+      const isSelected = selectedNodes.some(id => String(edge.from) === String(id) || String(edge.to) === String(id));
+      updates.push({ id: edge.id, hidden: !(isHovered || isSelected) });
     }
   });
   if (updates.length > 0) networkEdges.update(updates);

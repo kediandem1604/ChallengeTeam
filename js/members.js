@@ -12,7 +12,7 @@ function handleAvatarUpload(input) {
   if (!file) return;
 
   const reader = new FileReader();
-  reader.onload = function(e) {
+  reader.onload = function (e) {
     currentAvatarBase64 = e.target.result;
     console.log("✔ Đã nạp ảnh đại diện (Base64 ready)");
     const previewBox = document.getElementById('avatar-preview-box');
@@ -59,133 +59,283 @@ async function submitMember() {
 let network = null;
 let allMembersCache = [];
 
+// ─── HONEYCOMB STATE ───
+const HC_COLS = 7, HC_ROWS = 5;
+let hcPositions = {}; // { cellIndex: memberId }
+let hcMemberMap = {}; // { memberId: cellIndex }
+let hcMemberData = {}; // { memberId: memberObject }
+let hcDragId = null;
+let hcFromCell = null;
+
+
 const relColors = {
   sudo: { color: '#ff9900', dashes: false, label: 'Sư Đồ' },
   triki: { color: '#ff00ff', dashes: false, label: 'Tri Kỉ' },
   banthan: { color: '#ffd700', dashes: false, label: 'Bạn Thân' },
   kimlan: { color: '#00f2ff', dashes: false, label: 'Kim Lan' },
   clone: { color: '#888888', dashes: true, label: 'Clone' },
-  nhat: { color: '#00ff88', dashes: true, label: 'Nhặt từ PB' }
+  nhat: { color: '#00ff88', dashes: true, label: 'Nhặt từ PB' },
+  osin: { color: '#8b4513', dashes: false, label: 'Osin' },
+  conno: { color: '#dc143c', dashes: false, label: 'Con Nợ' }
 };
+
+const factionColors = {
+  'Thiết Y': '#ffd700', 'Cửu Linh': '#d8b4fe',
+  'Thần Tương': '#60a5fa', 'Long Ngâm': '#34d399',
+  'Toái Mộng': '#22d3ee', 'Tố Vấn': '#f472b6',
+  'Huyết Hà': '#f87171'
+};
+
+const hexImgCache = {};
+
+// Tạo ảnh hex bằng canvas (avatar clip vào lục giác, viền màu phái)
+function generateHexImage(m, cb) {
+  const key = m.id + '_' + (m.avatar ? m.avatar.slice(0, 20) : '');
+  if (hexImgCache[key]) { cb(hexImgCache[key]); return; }
+
+  const S = 90, cx = 45, cy = 45, r = 42, ir = 38;
+  const canvas = document.createElement('canvas');
+  canvas.width = canvas.height = S;
+  const ctx = canvas.getContext('2d');
+  const borderCol = m.isVip ? '#bf00ff' : (factionColors[m.faction] || '#00f2ff');
+
+  function hexPath(radius) {
+    ctx.beginPath();
+    for (let i = 0; i < 6; i++) {
+      const a = Math.PI / 3 * i - Math.PI / 6;
+      i === 0 ? ctx.moveTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a))
+        : ctx.lineTo(cx + radius * Math.cos(a), cy + radius * Math.sin(a));
+    }
+    ctx.closePath();
+  }
+
+  // Vẽ viền
+  hexPath(r); ctx.fillStyle = borderCol; ctx.fill();
+
+  function finish() {
+    // Glow nếu VIP
+    if (m.isVip) {
+      hexPath(r); ctx.strokeStyle = '#ff00ff'; ctx.lineWidth = 2;
+      ctx.shadowColor = '#bf00ff'; ctx.shadowBlur = 8; ctx.stroke();
+      ctx.shadowBlur = 0;
+    }
+    const url = canvas.toDataURL();
+    hexImgCache[key] = url; cb(url);
+  }
+
+  if (m.avatar && m.avatar.length > 10) {
+    const img = new Image();
+    img.onload = () => {
+      ctx.save(); hexPath(ir); ctx.clip();
+      ctx.drawImage(img, cx - ir, cy - ir, ir * 2, ir * 2);
+      ctx.restore(); finish();
+    };
+    img.onerror = () => {
+      hexPath(ir); ctx.fillStyle = '#020209'; ctx.fill(); finish();
+    };
+    img.src = m.avatar;
+  } else {
+    hexPath(ir); ctx.fillStyle = '#020209'; ctx.fill(); finish();
+  }
+}
 
 async function renderMembers(customItems = null) {
   const container = document.getElementById('network-graph');
   if (!container) return;
-  
+
   try {
     const allItems = customItems || await DB.getMembers();
     allMembersCache = allItems;
-    
-    // Update dropdowns
+
+    // Cập nhật dropdowns
     const src = document.getElementById('rel-source');
     const tgt = document.getElementById('rel-target');
+    const fdd = document.getElementById('focus-dropdown');
+    
     if (src && tgt) {
       let opts = '<option value="">-- Chọn --</option>';
       allItems.forEach(m => {
-        const displayName = m.igame || m.name;
-        opts += `<option value="${m.id}">${displayName} (${m.faction})</option>`;
+        opts += `<option value="${m.id}">${m.igame || m.name} (${m.faction})</option>`;
       });
-      src.innerHTML = opts;
-      tgt.innerHTML = opts;
+      src.innerHTML = tgt.innerHTML = opts;
+    }
+
+    if (fdd) {
+      let fopts = '';
+      allItems.forEach(m => {
+        fopts += `<div style="padding:0.4rem 0.8rem; cursor:pointer; color:var(--t2); font-size:0.85rem; border-bottom:1px solid rgba(0,242,255,0.1);" onmouseover="this.style.background='rgba(0,242,255,0.15)'; this.style.color='var(--c)'" onmouseout="this.style.background='transparent'; this.style.color='var(--t2)'" onclick="focusOnMember('${m.id}')">${m.igame || m.name}</div>`;
+      });
+      fdd.innerHTML = fopts;
     }
 
     if (!allItems || allItems.length === 0) {
-      container.innerHTML = `<div class="news-empty" style="height:100%; display:flex; flex-direction:column; justify-content:center; align-items:center;"><div class="empty-icon">👥</div><p>Chưa có hồ sơ nào.</p></div>`;
+      container.innerHTML = `<div class="news-empty" style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;"><div class="empty-icon">👥</div><p>Chưa có hồ sơ nào.</p></div>`;
       return;
     }
-    
-    // Fetch relations
-    const allRels = await DB.getRelations();
 
-    // Map Nodes
-    const nodes = new vis.DataSet(allItems.map(m => {
-      return {
-        id: m.id,
-        shape: 'circularImage',
-        image: (m.avatar && m.avatar.length > 10) ? m.avatar : 'https://via.placeholder.com/150/020209/00f2ff?text=User',
-        label: `${m.igame || m.name}\n[${m.faction}]`,
-        color: {
-          border: m.isVip ? '#bf00ff' : '#00f2ff',
-          background: '#020209',
-          highlight: { border: '#ffffff', background: '#020209' }
-        },
-        borderWidth: m.isVip ? 4 : 2,
-        font: { color: '#e0f7fa', face: 'Be Vietnam Pro', size: 14, strokeWidth: 2, strokeColor: '#000000' }
-      };
-    }));
+    // Fetch relations + saved positions song song
+    const [allRels, savedPosArr] = await Promise.all([
+      DB.getRelations(),
+      DB.getHoneycombPositions()
+    ]);
 
-    // Map Edges
-    const edges = new vis.DataSet(allRels.map(r => {
-      const conf = relColors[r.type] || relColors.banthan;
-      return {
-        id: r.id,
-        from: r.source_id,
-        to: r.target_id,
-        label: conf.label,
-        color: { color: conf.color, highlight: '#ffffff' },
-        dashes: conf.dashes,
-        font: { color: conf.color, size: 12, strokeWidth: 2, strokeColor: '#000000', align: 'horizontal' },
-        arrows: (r.type === 'sudo' || r.type === 'clone') ? 'to' : ''
-      };
-    }));
-
-    const data = { nodes: nodes, edges: edges };
-    const options = {
-      physics: {
-        forceAtlas2Based: { gravitationalConstant: -50, centralGravity: 0.01, springLength: 100, springConstant: 0.08 },
-        maxVelocity: 50,
-        solver: 'forceAtlas2Based',
-        timestep: 0.35,
-        stabilization: { iterations: 150 }
-      },
-      nodes: { shadow: { enabled: true, color: 'rgba(0, 242, 255, 0.5)', size: 10, x: 0, y: 0 } },
-      edges: { smooth: { type: 'continuous' } },
-      interaction: { dragView: true, zoomView: false, hover: true, tooltipDelay: 200 }
-    };
-
-    network = new vis.Network(container, data, options);
-
-    // Tắt physics sau khi đã tự động sắp xếp xong để cố định các node
-    network.on("stabilizationIterationsDone", function () {
-      network.setOptions( { physics: false } );
+    // Build position lookup {memberId: {x, y}}
+    const savedPos = {};
+    savedPosArr.forEach(p => {
+      if (p.pos_x != null && p.pos_y != null)
+        savedPos[String(p.member_id)] = { x: p.pos_x, y: p.pos_y };
     });
+    const hasSaved = Object.keys(savedPos).length > 0;
 
-    // On Click Node -> Show Modal
-    network.on("click", function (params) {
-      if (params.nodes.length > 0) {
-        showMemberModal(params.nodes[0]);
-      } else if (params.edges.length > 0) {
-        // Handle Edge Click (Delete Relation)
-        if (confirm("Bạn muốn xóa liên kết này?")) {
-          DB.deleteRelation(params.edges[0]).then(() => renderMembers());
-        }
-      }
+    // Pre-generate tất cả hex images trước khi build network
+    let pending = allItems.length;
+    const hexImages = {};
+    allItems.forEach(m => {
+      generateHexImage(m, url => {
+        hexImages[String(m.id)] = url;
+        if (--pending === 0) buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImages);
+      });
     });
 
   } catch (err) {
-    container.innerHTML = `<div class="news-empty"><p style="color:red">Lỗi tải dữ liệu: ${err.message}</p></div>`;
+    container.innerHTML = `<div class="news-empty"><p style="color:red">Lỗi: ${err.message}</p></div>`;
   }
+}
+
+function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImages) {
+  const nodes = new vis.DataSet(allItems.map(m => {
+    const sp = savedPos[String(m.id)];
+    return {
+      id: m.id,
+      shape: 'image',
+      image: hexImages[String(m.id)] || 'https://via.placeholder.com/90',
+      size: 38,
+      label: `${m.igame || m.name}\n[${m.faction}]`,
+      color: {
+        border: 'transparent', background: 'transparent',
+        highlight: { border: 'rgba(255,255,255,0.6)', background: 'transparent' }
+      },
+      borderWidth: 0,
+      font: { color: '#e0f7fa', face: 'Be Vietnam Pro', size: 13, strokeWidth: 2, strokeColor: '#000' },
+      x: sp ? sp.x : undefined,
+      y: sp ? sp.y : undefined
+    };
+  }));
+
+  const pairCounts = {};
+  allRels.forEach(r => {
+    const key = [r.source_id, r.target_id].sort().join('-');
+    pairCounts[key] = (pairCounts[key] || 0) + 1;
+  });
+
+  const pairCounters = {};
+  const edges = new vis.DataSet(allRels.map(r => {
+    const conf = relColors[r.type] || relColors.banthan;
+    const key = [r.source_id, r.target_id].sort().join('-');
+    const total = pairCounts[key];
+    pairCounters[key] = (pairCounters[key] || 0) + 1;
+    const idx = pairCounters[key];
+
+    let smooth = { type: 'continuous' };
+    if (total > 1) {
+      const spread = 0.25;
+      let roundness = (idx - (total + 1) / 2) * spread;
+      if (r.source_id > r.target_id) roundness = -roundness;
+      smooth = { type: 'curvedCW', roundness: roundness };
+    }
+
+    return {
+      id: r.id, from: r.source_id, to: r.target_id,
+      label: conf.label,
+      color: { color: conf.color, highlight: '#ffffff' },
+      dashes: conf.dashes,
+      font: { color: conf.color, size: 12, strokeWidth: 2, strokeColor: '#000', align: 'horizontal' },
+      arrows: (r.type === 'sudo' || r.type === 'clone') ? 'to' : '',
+      smooth: smooth
+    };
+  }));
+
+  const options = {
+    physics: hasSaved ? false : {
+      forceAtlas2Based: { gravitationalConstant: -60, centralGravity: 0.01, springLength: 120, springConstant: 0.08 },
+      maxVelocity: 50, solver: 'forceAtlas2Based', timestep: 0.35,
+      stabilization: { iterations: 150 }
+    },
+    nodes: { shadow: { enabled: true, color: 'rgba(0,242,255,0.4)', size: 12, x: 0, y: 0 } },
+    edges: { smooth: { type: 'continuous' } },
+    interaction: { dragView: true, zoomView: false, hover: true, tooltipDelay: 200 }
+  };
+
+  network = new vis.Network(container, { nodes, edges }, options);
+
+  // Lưu toàn bộ vị trí sau khi physics stabilize lần đầu
+  network.on('stabilizationIterationsDone', () => {
+    network.setOptions({ physics: false });
+    const positions = network.getPositions();
+    Object.keys(positions).forEach(nid => {
+      DB.setHoneycombPosition(nid, positions[nid].x, positions[nid].y);
+    });
+  });
+
+  // Lưu vị trí ngay sau khi kéo thả một node
+  network.on('dragEnd', params => {
+    if (!params.nodes.length) return;
+    const positions = network.getPositions(params.nodes);
+    params.nodes.forEach(nid => {
+      DB.setHoneycombPosition(nid, positions[nid].x, positions[nid].y);
+    });
+  });
+
+  // Click node → hiện modal; click edge → xóa liên kết
+  network.on('click', params => {
+    if (params.nodes.length > 0) {
+      showMemberModal(params.nodes[0]);
+    } else if (params.edges.length > 0) {
+      if (confirm('Bạn muốn xóa liên kết này?')) {
+        DB.deleteRelation(params.edges[0]).then(() => renderMembers());
+      }
+    }
+  });
 }
 
 function resetNetworkZoom() {
-  if (network) {
-    network.fit({ animation: { duration: 1000, easingFunction: 'easeInOutQuad' } });
-  }
+  if (network) network.fit({ animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
 }
-
 function zoomNetworkIn() {
-  if (network) {
-    const scale = network.getScale();
-    network.moveTo({ scale: scale * 1.5, animation: { duration: 300 } });
+  if (network) network.moveTo({ scale: network.getScale() * 1.5, animation: { duration: 300 } });
+}
+function zoomNetworkOut() {
+  if (network) network.moveTo({ scale: network.getScale() / 1.5, animation: { duration: 300 } });
+}
+
+function toggleFocusDropdown() {
+  const fdd = document.getElementById('focus-dropdown');
+  if (fdd) {
+    fdd.style.display = fdd.style.display === 'none' ? 'block' : 'none';
   }
 }
 
-function zoomNetworkOut() {
+function focusOnMember(id) {
   if (network) {
-    const scale = network.getScale();
-    network.moveTo({ scale: scale / 1.5, animation: { duration: 300 } });
+    network.focus(id, { scale: 1.2, animation: { duration: 800, easingFunction: 'easeInOutQuad' } });
+    network.selectNodes([id]);
   }
+  const fdd = document.getElementById('focus-dropdown');
+  if (fdd) fdd.style.display = 'none';
 }
+
+// Close dropdown if click outside
+document.addEventListener('click', function(e) {
+  const fdd = document.getElementById('focus-dropdown');
+  if (fdd && fdd.style.display === 'block') {
+    const btn = e.target.closest('button[onclick="toggleFocusDropdown()"]');
+    if (!btn && !fdd.contains(e.target)) {
+      fdd.style.display = 'none';
+    }
+  }
+});
+
+
 
 // ─── TẠO LIÊN KẾT ───
 async function addRelation() {
@@ -223,7 +373,7 @@ function showMemberModal(id) {
     modalCard.style.background = "rgba(7,7,26,.85)";
     modalCard.style.backdropFilter = "blur(14px)";
   }
-  
+
   const ratingCount = item.rating_count || 0;
   const ratingSum = item.rating_sum || 0;
   const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(1) : 0;
@@ -236,8 +386,8 @@ function showMemberModal(id) {
       <div style="position:relative; width:88px; height:88px;">
         <div class="member-avatar" style="margin:0; width:100%; height:100%;">
           ${(item.avatar && item.avatar.length > 10)
-            ? `<img id="modal-avatar-img" src="${item.avatar}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150?text=Error'">`
-            : `<div class="avatar-placeholder">👥</div>`}
+      ? `<img id="modal-avatar-img" src="${item.avatar}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150?text=Error'">`
+      : `<div class="avatar-placeholder">👥</div>`}
         </div>
         <label for="modal-avatar-input" title="Đổi ảnh đại diện" style="
           position:absolute; bottom:-4px; right:-4px;
@@ -277,7 +427,7 @@ function showMemberModal(id) {
       <button class="btn-delete" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteMember('${item.id}')">🗑 Xóa Hồ Sơ</button>
     </div>
   `;
-  
+
   modal.style.display = 'flex';
 }
 
@@ -312,7 +462,7 @@ function updateMemberAvatar(id, input) {
   const file = input.files[0];
   if (!file) return;
   const reader = new FileReader();
-  reader.onload = async function(e) {
+  reader.onload = async function (e) {
     const base64 = e.target.result;
     await DB.updateMember(id, { avatar: base64 });
     const m = allMembersCache.find(x => String(x.id) === String(id));
@@ -334,7 +484,7 @@ async function likeMember(id) {
     showToast('⚠ Bạn đã thích hồ sơ này rồi!');
     return;
   }
-  
+
   await DB.likeMember(id);
   localStorage.setItem('liked_' + id, 'true');
   showToast('✔ Đã thích hồ sơ!');
@@ -346,7 +496,7 @@ async function deleteMember(id) {
 
   // Xóa member, bảng tiến độ sẽ tự động cập nhật
   await DB.deleteMember(id);
-  
+
   // Close modal
   const modal = document.getElementById('member-modal');
   if (modal) modal.style.display = 'none';
@@ -363,13 +513,13 @@ function openRateModal(id, name) {
   // Use JS prompt for quick rating
   const stars = prompt(`Nhập số sao đánh giá cho ${name} (từ 1 đến 5):`, "5");
   if (stars === null) return;
-  
+
   const num = parseInt(stars);
   if (isNaN(num) || num < 1 || num > 5) {
     showToast('⚠ Vui lòng nhập số từ 1 đến 5!');
     return;
   }
-  
+
   submitRate(id, num);
 }
 
@@ -379,7 +529,7 @@ async function submitRate(id, stars) {
     showToast('⚠ Bạn đã đánh giá hồ sơ này rồi!');
     return;
   }
-  
+
   await DB.rateMember(id, stars);
   localStorage.setItem('rated_' + id, 'true');
   showToast(`✔ Đã gửi đánh giá ${stars} sao!`);
@@ -394,7 +544,7 @@ function initParticles() {
     const p = document.createElement('div');
     p.className = 'particle';
     const size = Math.random() * 3 + 1;
-    p.style.cssText = `left:${Math.random()*100}%;width:${size}px;height:${size}px;--dur:${7+Math.random()*8}s;--delay:${Math.random()*10}s;`;
+    p.style.cssText = `left:${Math.random() * 100}%;width:${size}px;height:${size}px;--dur:${7 + Math.random() * 8}s;--delay:${Math.random() * 10}s;`;
     bg.appendChild(p);
   }
 }
@@ -407,34 +557,142 @@ function initNavbar() {
   });
 }
 
+// ─── HONEYCOMB VIEW ───
+
+function switchView(view) {
+  const netSec = document.getElementById('network-section');
+  const hcSec = document.getElementById('honeycomb-section');
+  const btnNet = document.getElementById('tab-network');
+  const btnHc = document.getElementById('tab-honeycomb');
+  if (!netSec || !hcSec) return;
+  if (view === 'honeycomb') {
+    netSec.style.display = 'none'; hcSec.style.display = 'block';
+    btnNet.classList.remove('active'); btnHc.classList.add('active');
+    renderHoneycomb();
+  } else {
+    netSec.style.display = 'block'; hcSec.style.display = 'none';
+    btnNet.classList.add('active'); btnHc.classList.remove('active');
+  }
+}
+
+async function renderHoneycomb() {
+  const wrap = document.getElementById('hc-wrap');
+  if (!wrap) return;
+  wrap.innerHTML = '<p style="color:var(--t2);text-align:center;padding:2rem">&#x23F3; Dang tai...</p>';
+  const [members, positions] = await Promise.all([DB.getMembers(), DB.getHoneycombPositions()]);
+  allMembersCache = members;
+  hcPositions = {}; hcMemberMap = {}; hcMemberData = {};
+  members.forEach(m => { hcMemberData[String(m.id)] = m; });
+  positions.forEach(p => {
+    hcPositions[p.cell_index] = String(p.member_id);
+    hcMemberMap[String(p.member_id)] = p.cell_index;
+  });
+  wrap.innerHTML = buildHoneycombHTML();
+  attachHexDrop();
+}
+
+function buildHoneycombHTML() {
+  const placed = new Set(Object.values(hcPositions));
+  const unplaced = Object.values(hcMemberData).filter(m => !placed.has(String(m.id)));
+
+  const chips = unplaced.map(m => {
+    const av = (m.avatar && m.avatar.length > 10) ? m.avatar : '';
+    return '<div class="hc-chip" draggable="true" data-mid="' + m.id + '" title="' + (m.igame || m.name) + ' [' + m.faction + ']">'
+      + '<div class="hc-chip-av" style="background-image:url(\'' + av + '\')">' + (av ? '' : 'X') + '</div>'
+      + '<span class="hc-chip-nm">' + (m.igame || m.name).substring(0, 12) + '</span></div>';
+  }).join('');
+
+  let gridHTML = '';
+  for (let row = 0; row < HC_ROWS; row++) {
+    gridHTML += '<div class="hc-row' + (row % 2 === 1 ? ' hc-off' : '') + '">';
+    for (let col = 0; col < HC_COLS; col++) {
+      const ci = row * HC_COLS + col;
+      const mid = hcPositions[ci];
+      const m = mid ? hcMemberData[mid] : null;
+      const av = m && m.avatar && m.avatar.length > 10 ? m.avatar : '';
+      gridHTML += '<div class="hc-cell' + (m ? ' hc-occ' : '') + '" data-ci="' + ci + '"'
+        + (m ? ' draggable="true" data-mid="' + m.id + '"' : '') + '>'
+        + '<div class="hc-outer"><div class="hc-inner">'
+        + (m
+          ? '<div class="hc-av" style="background-image:url(\'' + av + '\')">' + (av ? '' : 'X') + '</div>'
+          + '<div class="hc-nm">' + (m.igame || m.name).substring(0, 9) + '</div>'
+          : '<span class="hc-plus">+</span>')
+        + '</div></div></div>';
+    }
+    gridHTML += '</div>';
+  }
+
+  return '<div class="hc-layout">'
+    + '<div class="hc-sidebar">'
+    + '<div class="hc-sb-title">Chua xep (' + unplaced.length + ')</div>'
+    + '<div class="hc-sb-list" id="hc-sb-list">' + (chips || '<p class="hc-all-done">&#10003; Tat ca da xep!</p>') + '</div>'
+    + '<div class="hc-remove-zone" id="hc-remove-zone">&#x2715; Keo vao day de go ra</div>'
+    + '</div>'
+    + '<div class="hc-grid-wrap"><div class="hc-grid" id="hc-grid">' + gridHTML + '</div></div>'
+    + '</div>';
+}
+
+function attachHexDrop() {
+  document.querySelectorAll('.hc-chip').forEach(el => {
+    el.addEventListener('dragstart', () => { hcDragId = el.dataset.mid; hcFromCell = null; });
+  });
+  document.querySelectorAll('.hc-cell').forEach(cell => {
+    if (cell.dataset.mid) {
+      cell.addEventListener('dragstart', () => { hcDragId = cell.dataset.mid; hcFromCell = parseInt(cell.dataset.ci); });
+    }
+    cell.addEventListener('dragover', e => { e.preventDefault(); cell.classList.add('hc-hover'); });
+    cell.addEventListener('dragleave', () => cell.classList.remove('hc-hover'));
+    cell.addEventListener('drop', e => { e.preventDefault(); cell.classList.remove('hc-hover'); dropToCell(parseInt(cell.dataset.ci)); });
+  });
+  const rz = document.getElementById('hc-remove-zone');
+  if (rz) {
+    rz.addEventListener('dragover', e => { e.preventDefault(); rz.classList.add('hc-hover'); });
+    rz.addEventListener('dragleave', () => rz.classList.remove('hc-hover'));
+    rz.addEventListener('drop', e => { e.preventDefault(); rz.classList.remove('hc-hover'); dropToRemove(); });
+  }
+}
+
+function dropToCell(targetCi) {
+  if (hcDragId == null) return;
+  const memberId = String(hcDragId);
+  const existingId = hcPositions[targetCi] ? String(hcPositions[targetCi]) : null;
+  if (hcFromCell !== null) { delete hcPositions[hcFromCell]; delete hcMemberMap[memberId]; }
+  if (existingId && existingId !== memberId) {
+    if (hcFromCell !== null) {
+      hcPositions[hcFromCell] = existingId; hcMemberMap[existingId] = hcFromCell;
+      DB.setHoneycombPosition(existingId, hcFromCell);
+    } else { delete hcPositions[targetCi]; delete hcMemberMap[existingId]; DB.clearHoneycombPosition(existingId); }
+  }
+  hcPositions[targetCi] = memberId; hcMemberMap[memberId] = targetCi;
+  DB.setHoneycombPosition(memberId, targetCi);
+  hcDragId = null; hcFromCell = null;
+  const w = document.getElementById('hc-wrap');
+  if (w) { w.innerHTML = buildHoneycombHTML(); attachHexDrop(); }
+}
+
+function dropToRemove() {
+  if (hcDragId == null || hcFromCell === null) return;
+  const memberId = String(hcDragId);
+  delete hcPositions[hcFromCell]; delete hcMemberMap[memberId];
+  DB.clearHoneycombPosition(memberId);
+  hcDragId = null; hcFromCell = null;
+  const w = document.getElementById('hc-wrap');
+  if (w) { w.innerHTML = buildHoneycombHTML(); attachHexDrop(); }
+}
+
 // ─── INIT ───
 document.addEventListener('DOMContentLoaded', () => {
   initParticles();
   initNavbar();
-  
-  // Tải dữ liệu lần đầu
   renderMembers();
-
-  // Nếu sau 1.5s vẫn chưa có gì (có thể do mạng chậm), thử tải lại
-  setTimeout(() => {
-    const list = document.getElementById('public-list');
-    if (list && list.querySelector('.news-empty')) {
-      console.log("Thử tải lại danh sách thành viên...");
-      renderMembers();
-    }
-  }, 1500);
-
-  // Cuộn xuống nếu có #add
+  switchView('network');
   if (window.location.hash === '#add') {
-    setTimeout(() => {
-      document.getElementById('add').scrollIntoView({ behavior: 'smooth' });
-    }, 500);
+    setTimeout(() => document.getElementById('add').scrollIntoView({ behavior: 'smooth' }), 500);
   }
-
-  // Lắng nghe thay đổi Realtime
   setTimeout(() => {
     if (typeof supabaseClient !== 'undefined' && supabaseClient) {
       DB.onMembersChange(items => renderMembers(items));
     }
   }, 500);
 });
+

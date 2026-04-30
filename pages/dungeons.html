@@ -9,6 +9,25 @@
   <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;700;800;900&family=Charm:wght@400;700&family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;0,700;1,400;1,600&family=Playfair+Display:ital,wght@0,400;0,700;0,800;0,900;1,400;1,700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="../css/style.css" />
   <style>
+    /* ── PERF: tách GPU layer cho elements animated ── */
+    .compass-ring,
+    .compass-needle,
+    .pagoda-icon,
+    .pagoda-glow,
+    .hex,
+    .float-deco {
+      will-change: transform;
+      transform: translateZ(0);
+    }
+
+    /* ── PERF: giảm repaint cho table ── */
+    .dungeon-table {
+      contain: layout style;
+    }
+    #dungeon-body tr {
+      contain: layout style;
+    }
+
     .dungeon-container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:10}
     .dungeon-table{width:100%;border-spacing:0 8px;border-collapse:separate;margin-top:1.5rem;background:transparent;min-width:900px}
     .dungeon-table th{
@@ -18,20 +37,22 @@
     .dungeon-table td{
       background:rgba(7,7,26,.65);padding:.9rem 1rem;color:var(--text);font-size:.88rem;
       border-top:1px solid rgba(0,242,255,.15);border-bottom:1px solid rgba(0,242,255,.15);
-      transition:.3s;text-align:center;
+      /* PERF: chỉ transition color, không transition box-shadow */
+      transition: background 0.2s, border-color 0.2s;
+      text-align:center;
     }
     .dungeon-table td:first-child{border-left:1px solid rgba(0,242,255,.15);border-radius:8px 0 0 8px}
     .dungeon-table td:last-child{border-right:1px solid rgba(0,242,255,.15);border-radius:0 8px 8px 0}
-    .dungeon-table tr:hover td{background:rgba(0,242,255,.07);border-color:rgba(0,242,255,.4);box-shadow:0 0 12px rgba(0,242,255,.08)}
+    /* PERF: bỏ box-shadow hover để tránh repaint */
+    .dungeon-table tr:hover td{background:rgba(0,242,255,.07);border-color:rgba(0,242,255,.4)}
 
     .status-btn{
       background:rgba(0,0,0,.4);border:1px solid rgba(255,255,255,.1);
       color:var(--t2);padding:.45rem .7rem;border-radius:6px;
-      cursor:pointer;transition:.3s;font-weight:700;font-size:.75rem;width:100%;
+      cursor:pointer;transition:background 0.2s, border-color 0.2s, color 0.2s;font-weight:700;font-size:.75rem;width:100%;
     }
     .status-btn.done{
       background:rgba(0,242,255,.12);border-color:var(--c);color:var(--c);
-      box-shadow:0 0 8px rgba(0,242,255,.2);
     }
     .status-btn.done::before{content:'✔ '}
 
@@ -46,6 +67,10 @@
     .action-btn{background:none;border:none;cursor:pointer;color:var(--t2);font-size:1.15rem;transition:.3s}
     .action-btn:hover{color:#f87171;transform:scale(1.15)}
     .header-actions{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:1rem}
+
+    /* ── PERF: tắt scanline và flicker khi trang có nhiều row ── */
+    body.data-loaded::after { display: none; }
+    body.data-loaded { animation: none; }
   </style>
 </head>
 <body>

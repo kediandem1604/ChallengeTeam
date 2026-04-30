@@ -5,7 +5,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Thành Viên – Thử thách đến sập Game</title>
-  <meta name="description" content="Danh sách thành viên bang hội Thử thách đến sập Game." />
+  <meta name="description" content="Danh sách thành viên Team Thử thách đến sập Game." />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link
@@ -15,6 +15,230 @@
   <link rel="stylesheet" href="../css/members.css" />
   <!-- Vis Network for Graph -->
   <script type="text/javascript" src="https://unpkg.com/vis-network/standalone/umd/vis-network.min.js"></script>
+  <style>
+    /* ── TAB BUTTONS ── */
+    .view-tabs {
+      display: flex;
+      gap: .75rem;
+      justify-content: center;
+      margin-bottom: 1.5rem;
+    }
+
+    .view-tab-btn {
+      background: rgba(0, 242, 255, .06);
+      border: 1px solid rgba(0, 242, 255, .3);
+      color: var(--t2);
+      font-family: 'Be Vietnam Pro', sans-serif;
+      font-weight: 700;
+      font-size: .82rem;
+      letter-spacing: 1px;
+      padding: .55rem 1.4rem;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: .25s;
+    }
+
+    .view-tab-btn:hover {
+      background: rgba(0, 242, 255, .14);
+      color: var(--c);
+    }
+
+    .view-tab-btn.active {
+      background: rgba(0, 242, 255, .16);
+      border-color: var(--c);
+      color: var(--c);
+      box-shadow: 0 0 12px rgba(0, 242, 255, .25);
+    }
+
+    /* ── HONEYCOMB LAYOUT ── */
+    .hc-layout {
+      display: flex;
+      gap: 1.25rem;
+      align-items: flex-start;
+    }
+
+    .hc-sidebar {
+      width: 175px;
+      flex-shrink: 0;
+      background: rgba(7, 7, 26, .7);
+      border: 1px solid rgba(0, 242, 255, .2);
+      border-radius: 10px;
+      padding: .85rem;
+    }
+
+    .hc-sb-title {
+      color: var(--c);
+      font-weight: 700;
+      font-size: .78rem;
+      letter-spacing: 1px;
+      margin-bottom: .75rem;
+    }
+
+    .hc-sb-list {
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+      max-height: 420px;
+      overflow-y: auto;
+      margin-bottom: .75rem;
+    }
+
+    .hc-chip {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      background: rgba(0, 242, 255, .06);
+      border: 1px solid rgba(0, 242, 255, .2);
+      border-radius: 8px;
+      padding: .4rem .6rem;
+      cursor: grab;
+      transition: .2s;
+    }
+
+    .hc-chip:hover {
+      background: rgba(0, 242, 255, .14);
+      border-color: var(--c);
+    }
+
+    .hc-chip-av {
+      width: 32px;
+      height: 32px;
+      border-radius: 50%;
+      flex-shrink: 0;
+      background: rgba(0, 0, 0, .5) center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      border: 1px solid rgba(0, 242, 255, .3);
+    }
+
+    .hc-chip-nm {
+      color: var(--text);
+      font-size: .75rem;
+      font-weight: 600;
+      word-break: break-word;
+    }
+
+    .hc-all-done {
+      color: var(--t2);
+      font-size: .78rem;
+      text-align: center;
+      opacity: .6;
+    }
+
+    .hc-remove-zone {
+      text-align: center;
+      padding: .5rem;
+      border: 1px dashed rgba(248, 113, 113, .4);
+      border-radius: 8px;
+      color: rgba(248, 113, 113, .7);
+      font-size: .73rem;
+      cursor: pointer;
+      transition: .2s;
+    }
+
+    .hc-remove-zone.hc-hover {
+      background: rgba(248, 113, 113, .15);
+      border-color: #f87171;
+      color: #f87171;
+    }
+
+    /* ── HEX GRID ── */
+    .hc-grid-wrap {
+      flex: 1;
+      overflow-x: auto;
+      padding-bottom: .5rem;
+    }
+
+    .hc-grid {
+      display: inline-block;
+      padding: 1rem 1rem 2rem;
+    }
+
+    .hc-row {
+      display: flex;
+      margin-bottom: -22px;
+    }
+
+    .hc-off {
+      margin-left: 40px;
+    }
+
+    .hc-cell {
+      width: 76px;
+      height: 88px;
+      margin-right: 4px;
+      position: relative;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+
+    .hc-outer {
+      position: absolute;
+      inset: 0;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      background: rgba(0, 242, 255, .18);
+      transition: .2s;
+    }
+
+    .hc-inner {
+      position: absolute;
+      inset: 3px;
+      clip-path: polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%);
+      background: rgba(7, 7, 26, .85);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      transition: .2s;
+    }
+
+    .hc-cell:hover .hc-outer,
+    .hc-cell.hc-hover .hc-outer {
+      background: rgba(0, 242, 255, .45);
+    }
+
+    .hc-cell:hover .hc-inner,
+    .hc-cell.hc-hover .hc-inner {
+      background: rgba(0, 242, 255, .12);
+    }
+
+    .hc-cell.hc-occ .hc-outer {
+      background: rgba(0, 242, 255, .3);
+    }
+
+    .hc-cell.hc-occ:hover .hc-outer {
+      background: rgba(0, 242, 255, .55);
+    }
+
+    .hc-plus {
+      color: rgba(0, 242, 255, .35);
+      font-size: 1.4rem;
+      font-weight: 300;
+    }
+
+    .hc-av {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: rgba(0, 0, 0, .5) center/cover no-repeat;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: .85rem;
+      flex-shrink: 0;
+    }
+
+    .hc-nm {
+      color: var(--text);
+      font-size: .58rem;
+      font-weight: 700;
+      text-align: center;
+      line-height: 1.2;
+    }
+  </style>
 </head>
 
 <body>
@@ -46,8 +270,9 @@
     <!-- PUBLIC LIST (MẠNG LƯỚI QUAN HỆ) -->
     <section id="public-section">
       <div class="section-header" style="margin-bottom:1.5rem;">
-        <h2 class="section-title" style="font-size:1.5rem;">🌌 Mạng Lưới Bang Hội</h2>
-        <p class="section-sub">Bản đồ liên kết nhân mạch của Kiếm Khách Đoàn</p>
+        <h2 class="section-title" style="font-size:1.5rem;">🌌 Mạng Lưới Team</h2>
+        <p class="section-sub">Bản đồ liên kết nhân mạch · <span style="color:var(--c);font-size:.8rem;">⬡ Kéo node để
+            sắp xếp — vị trí được lưu tự động</span></p>
       </div>
 
       <div id="network-graph"
@@ -60,11 +285,16 @@
           <span class="btn-sword-text">Phóng To ➕</span>
           <span class="btn-sword-blade flip"></span>
         </button>
-        <button class="btn-sword btn-secondary" onclick="resetNetworkZoom()" style="padding:0.5rem 1rem;">
-          <span class="btn-sword-blade"></span>
-          <span class="btn-sword-text">Khôi Phục Góc Nhìn 🔍</span>
-          <span class="btn-sword-blade flip"></span>
-        </button>
+        <div style="position:relative; display:inline-block;">
+          <button class="btn-sword btn-secondary" onclick="toggleFocusDropdown()" style="padding:0.5rem 1rem;">
+            <span class="btn-sword-blade"></span>
+            <span class="btn-sword-text">Đổi Góc Nhìn 🔍</span>
+            <span class="btn-sword-blade flip"></span>
+          </button>
+          <div id="focus-dropdown" style="display:none; position:absolute; top:100%; left:50%; transform:translateX(-50%); background:rgba(7,7,26,0.95); border:1px solid rgba(0,242,255,0.4); border-radius:8px; z-index:100; margin-top:0.5rem; max-height:250px; overflow-y:auto; min-width:180px; box-shadow:0 0 15px rgba(0,0,0,0.8);">
+            <!-- List filled via JS -->
+          </div>
+        </div>
         <button class="btn-sword" onclick="zoomNetworkOut()" style="padding:0.5rem 1rem;">
           <span class="btn-sword-blade"></span>
           <span class="btn-sword-text">Thu Nhỏ ➖</span>
@@ -72,6 +302,8 @@
         </button>
       </div>
     </section>
+
+
 
     <!-- DIVIDER -->
     <div style="text-align:center;margin:3rem 0;color:var(--gold3);letter-spacing:8px;">⸻ ✦ ⸻</div>
@@ -91,12 +323,14 @@
           <div class="form-group" style="flex:1; min-width:150px;">
             <label>Mối Quan Hệ</label>
             <select id="rel-type">
-              <option value="sudo">📜 Sư Đồ</option>
-              <option value="triki">🌸 Tri Kỉ</option>
-              <option value="banthan">🤝 Bạn Thân</option>
-              <option value="kimlan">⚔️ Kim Lan</option>
-              <option value="clone">🎭 Clone</option>
-              <option value="nhat">🏕️ Nhặt từ PB</option>
+              <option value="sudo">Sư Đồ (Màu Cam)</option>
+              <option value="triki">Tri Kỉ (Hồng)</option>
+              <option value="banthan">Bạn Thân (Vàng)</option>
+              <option value="kimlan">Kim Lan (Xanh Ngọc)</option>
+              <option value="clone">Clone (Xám)</option>
+              <option value="nhat">Nhặt PB (Xanh Lá)</option>
+              <option value="osin">Osin (Nâu)</option>
+              <option value="conno">Con Nợ (Đỏ)</option>
             </select>
           </div>
           <div class="form-group" style="flex:1; min-width:200px;">

@@ -209,20 +209,133 @@ async function deleteVideo(id, e) {
 }
 
 // ─── MODAL ───
-function openModal(item) {
-  const box = document.getElementById('modal-content');
+async function openModal(item) {
+  const modal = document.getElementById('post-modal');
+  const box   = document.getElementById('modal-content');
+  if (!modal || !box) return;
+
+  const id    = String(item.id);
+  const liked = DB.hasLikedNews(id);
+
+  // Hiện modal ngay với ⋯ loading cho like/comment
   box.innerHTML = `
     ${item.image ? `<img class="modal-img" src="${item.image}" alt="${item.title}"/>` : ''}
     <div class="modal-tag">${item.tag}</div>
     <div class="modal-title">${item.title}</div>
     <div class="modal-meta">✦ ${item.author} &nbsp;·&nbsp; ${item.date}</div>
     <div class="modal-body">${item.content}</div>
+    <div class="modal-actions">
+      <button class="modal-like-btn ${liked ? 'liked' : ''}" id="like-btn-${id}" onclick="handleLike('${id}', event)">
+        <span class="like-icon">❤️</span>
+        <span class="like-count" id="like-count-${id}">⋯</span>
+        <span class="like-label">${liked ? 'Đã thích' : 'Thích'}</span>
+      </button>
+      <button class="modal-comment-btn" onclick="toggleCommentBox('${id}')">
+        💬 <span id="comment-count-${id}">⋯</span> Bình Luận
+      </button>
+    </div>
+    <div class="modal-comment-section" id="comment-section-${id}">
+      <div class="comment-input-wrap">
+        <input type="text" id="comment-author-${id}" placeholder="Tên của bạn (tùy chọn)..." maxlength="30" />
+        <textarea id="comment-text-${id}" placeholder="Viết bình luận..." rows="2" maxlength="500"></textarea>
+        <button class="comment-submit-btn" onclick="submitComment('${id}')">→ Gửi</button>
+      </div>
+      <div class="comments-list" id="comments-list-${id}">
+        <p class="no-comments" style="opacity:0.5">⏳ Đang tải bình luận...</p>
+      </div>
+    </div>
   `;
-  document.getElementById('post-modal').classList.add('open');
+  modal.classList.add('open');
+
+  // Load song song từ Supabase
+  const [likeCount, comments] = await Promise.all([
+    DB.getNewsLikes(id),
+    DB.getComments(id)
+  ]);
+
+  const likeEl = document.getElementById(`like-count-${id}`);
+  if (likeEl) likeEl.textContent = likeCount;
+
+  const commentCountEl = document.getElementById(`comment-count-${id}`);
+  if (commentCountEl) commentCountEl.textContent = comments.length;
+
+  const list = document.getElementById(`comments-list-${id}`);
+  if (list) {
+    list.innerHTML = comments.length === 0
+      ? '<p class="no-comments">Chưa có bình luận nào. Hãy là người đầu tiên!</p>'
+      : comments.map(c => `
+          <div class="comment-item">
+            <div class="comment-author">✦ ${escapeHtml(c.author)} <span class="comment-date">${c.date}</span></div>
+            <div class="comment-text">${escapeHtml(c.text)}</div>
+          </div>
+        `).join('');
+  }
 }
+
 function closeModal(e) {
   if (e.target === document.getElementById('post-modal'))
     document.getElementById('post-modal').classList.remove('open');
+}
+
+async function handleLike(id, e) {
+  e.stopPropagation();
+  const btn     = document.getElementById(`like-btn-${id}`);
+  const countEl = document.getElementById(`like-count-${id}`);
+  if (btn) btn.disabled = true; // chống double-click
+
+  const ok = await DB.likeNews(id);
+  if (btn) btn.disabled = false;
+
+  if (!ok) { showToast('♥ Bạn đã thích bài viết này rồi!'); return; }
+
+  if (btn) { btn.classList.add('liked'); btn.querySelector('.like-label').textContent = 'Đã thích'; }
+  const newCount = await DB.getNewsLikes(id);
+  if (countEl) countEl.textContent = newCount;
+  showToast('❤️ Đã thích bài viết!');
+}
+
+function toggleCommentBox(id) {
+  const section = document.getElementById(`comment-section-${id}`);
+  if (section) section.classList.toggle('visible');
+}
+
+async function submitComment(id) {
+  const authorEl  = document.getElementById(`comment-author-${id}`);
+  const textEl    = document.getElementById(`comment-text-${id}`);
+  const submitBtn = textEl ? textEl.closest('.comment-input-wrap')?.querySelector('.comment-submit-btn') : null;
+  const text      = textEl ? textEl.value.trim() : '';
+  if (!text) { showToast('⚠ Vui lòng nhập nội dung bình luận!'); return; }
+
+  // Disable nút để tránh gửi 2 lần
+  if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = '⏳ Đang gửi...'; }
+
+  const author = authorEl ? (authorEl.value.trim() || 'Vô Danh') : 'Vô Danh';
+  const entry  = await DB.addComment(id, { author, text });
+
+  if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = '→ Gửi'; }
+
+  const list = document.getElementById(`comments-list-${id}`);
+  if (list) {
+    const noMsg = list.querySelector('.no-comments');
+    if (noMsg) noMsg.remove();
+    const div = document.createElement('div');
+    div.className = 'comment-item new-comment';
+    div.innerHTML = `
+      <div class="comment-author">❆ ${escapeHtml(entry.author)} <span class="comment-date">${entry.date}</span></div>
+      <div class="comment-text">${escapeHtml(entry.text)}</div>
+    `;
+    list.prepend(div);
+  }
+  // Cập nhật count thực tế từ DB
+  const comments = await DB.getComments(id);
+  const countEl  = document.getElementById(`comment-count-${id}`);
+  if (countEl) countEl.textContent = comments.length;
+  if (textEl) textEl.value = '';
+  showToast('💬 Đã gửi bình luận!');
+}
+
+function escapeHtml(str) {
+  return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
 }
 
 // ─── YOUTUBE ID ───
@@ -249,18 +362,22 @@ function initNavbar() {
 
 // ─── INIT ───
 document.addEventListener('DOMContentLoaded', () => {
-  initParticles();
-  initNavbar();
-  
-  // Initial render
-  renderAllPosts();
-  renderAllVideos();
-  
-  // Real-time updates if Firebase is ready
-  setTimeout(() => {
-    if (typeof db !== 'undefined' && db) {
-      DB.onNewsChange(items => renderAllPosts(items));
-      DB.onVideosChange(items => renderAllVideos(items));
-    }
-  }, 1000);
+  // Chỉ init news-page logic khi đang ở trang news.html
+  const isNewsPage = !!document.getElementById('all-posts-grid');
+
+  if (isNewsPage) {
+    initParticles();
+    initNavbar();
+    renderAllPosts();
+    renderAllVideos();
+
+    // Real-time updates if Firebase is ready
+    setTimeout(() => {
+      if (typeof db !== 'undefined' && db) {
+        DB.onNewsChange(items => renderAllPosts(items));
+        DB.onVideosChange(items => renderAllVideos(items));
+      }
+    }, 1000);
+  }
 });
+

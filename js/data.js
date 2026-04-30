@@ -73,6 +73,131 @@ const DB = {
     localStorage.setItem('kkd_news', JSON.stringify(arr.filter(n => String(n.id) !== String(id))));
   },
 
+  // ── NEWS LIKES ──
+  hasLikedNews(id) {
+    // localStorage để nhớ "máy này đã like chưa" — chống spam
+    const liked = JSON.parse(localStorage.getItem('kkd_news_likes') || '{}');
+    return !!liked[id];
+  },
+
+  async getNewsLikes(id) {
+    await waitForConnection();
+    if (supabaseClient) {
+      const { count } = await supabaseClient
+        .from('news_likes')
+        .select('*', { count: 'exact', head: true })
+        .eq('news_id', String(id));
+      return count || 0;
+    }
+    // fallback localStorage
+    const counts = JSON.parse(localStorage.getItem('kkd_news_like_counts') || '{}');
+    return counts[id] || 0;
+  },
+
+  async likeNews(id) {
+    // Chống like 2 lần từ cùng máy
+    const liked = JSON.parse(localStorage.getItem('kkd_news_likes') || '{}');
+    if (liked[id]) return false;
+
+    if (supabaseClient) {
+      const { error } = await supabaseClient
+        .from('news_likes')
+        .insert([{ news_id: String(id) }]);
+      if (error) { console.warn('Like error:', error); return false; }
+    } else {
+      const counts = JSON.parse(localStorage.getItem('kkd_news_like_counts') || '{}');
+      counts[id] = (counts[id] || 0) + 1;
+      localStorage.setItem('kkd_news_like_counts', JSON.stringify(counts));
+    }
+
+    liked[id] = true;
+    localStorage.setItem('kkd_news_likes', JSON.stringify(liked));
+    return true;
+  },
+
+  // ── NEWS COMMENTS ──
+  async getComments(newsId) {
+    await waitForConnection();
+    if (supabaseClient) {
+      const { data } = await supabaseClient
+        .from('news_comments')
+        .select('*')
+        .eq('news_id', String(newsId))
+        .order('created_at', { ascending: false });
+      if (data) return data.map(c => ({
+        id: c.id,
+        author: c.author,
+        text: c.text,
+        date: new Date(c.created_at).toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+      }));
+    }
+    // fallback localStorage
+    const all = JSON.parse(localStorage.getItem('kkd_comments') || '{}');
+    return all[newsId] || [];
+  },
+
+  async addComment(newsId, comment) {
+    const entry = {
+      author: comment.author || 'Vô Danh',
+      text: comment.text,
+      date: new Date().toLocaleDateString('vi-VN', { hour: '2-digit', minute: '2-digit' })
+    };
+
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('news_comments')
+        .insert([{ news_id: String(newsId), author: entry.author, text: entry.text }])
+        .select()
+        .single();
+      if (data) { entry.id = data.id; return entry; }
+      if (error) console.warn('Comment error:', error);
+    }
+
+    // fallback localStorage
+    const all = JSON.parse(localStorage.getItem('kkd_comments') || '{}');
+    if (!all[newsId]) all[newsId] = [];
+    entry.id = Date.now().toString();
+    all[newsId].unshift(entry);
+    localStorage.setItem('kkd_comments', JSON.stringify(all));
+    return entry;
+  },
+
+  // ── NODE POSITIONS (lưu vị trí kéo thả trong mạng lưới) ──
+  async getHoneycombPositions() {
+    await waitForConnection();
+    if (supabaseClient) {
+      const { data } = await supabaseClient.from('honeycomb_positions').select('*');
+      if (data) return data;
+    }
+    return JSON.parse(localStorage.getItem('kkd_node_pos') || '[]');
+  },
+
+  // Lưu vị trí x,y của node sau khi kéo thả
+  async setHoneycombPosition(memberId, x, y) {
+    if (supabaseClient) {
+      await supabaseClient.from('honeycomb_positions').upsert(
+        { member_id: String(memberId), cell_index: 0, pos_x: x, pos_y: y, updated_at: new Date().toISOString() },
+        { onConflict: 'member_id' }
+      );
+      return;
+    }
+    const arr = JSON.parse(localStorage.getItem('kkd_node_pos') || '[]');
+    const idx = arr.findIndex(p => String(p.member_id) === String(memberId));
+    if (idx >= 0) { arr[idx].pos_x = x; arr[idx].pos_y = y; }
+    else arr.push({ member_id: String(memberId), pos_x: x, pos_y: y });
+    localStorage.setItem('kkd_node_pos', JSON.stringify(arr));
+  },
+
+  async clearHoneycombPosition(memberId) {
+    if (supabaseClient) {
+      await supabaseClient.from('honeycomb_positions').delete().eq('member_id', String(memberId));
+      return;
+    }
+    const arr = JSON.parse(localStorage.getItem('kkd_node_pos') || '[]');
+    localStorage.setItem('kkd_node_pos', JSON.stringify(arr.filter(p => String(p.member_id) !== String(memberId))));
+  },
+
+
   // ── VIDEOS ──
   async getVideos() {
     await waitForConnection();

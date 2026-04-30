@@ -1,4 +1,4 @@
-# Kiếm Khách Đoàn — Web Bang Hội
+﻿# Kiếm Khách Đoàn — Web Team
 
 Website chủ đề kiếm hiệp cho nhóm chơi game.
 

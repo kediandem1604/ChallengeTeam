@@ -113,7 +113,7 @@ async function renderHomeNews(customItems = null) {
         <span>${item.date}</span>
       </div>
     `;
-    card.onclick = () => window.location.href = `pages/news.html#post-${item.id}`;
+    card.onclick = () => openModal(item);
     grid.appendChild(card);
   });
 }

@@ -76,7 +76,10 @@ const relColors = {
   clone: { color: '#888888', dashes: true, label: 'Clone' },
   nhat: { color: '#00ff88', dashes: true, label: 'Nhặt từ PB' },
   osin: { color: '#8b4513', dashes: false, label: 'Osin' },
-  conno: { color: '#dc143c', dashes: false, label: 'Con Nợ' }
+  conno: { color: '#dc143c', dashes: false, label: 'Con Nợ' },
+  kimlancu: { color: '#64748b', dashes: true, label: 'Kim Lan Cũ' },
+  tinh1dem: { color: '#e11d48', dashes: false, label: 'Tình 1 Đêm' },
+  discord: { color: '#5865F2', dashes: false, label: 'Cùng Discord' }
 };
 
 const factionColors = {

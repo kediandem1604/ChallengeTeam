@@ -159,9 +159,18 @@ async function resetDungeonsWeekly() {
   }
   
   if (confirm('CHÚ Ý: Hành động này sẽ đưa tất cả tiến độ phó bản về trạng thái "Chưa". Bạn có chắc chắn?')) {
+    // 1. Reset in-memory ngay lập tức — UI cập nhật liền không cần chờ Supabase
+    const resetFields = { boss1: false, boss2: false, boss3: false, boss4: false, boss5: false, boss6: false, bi_canh: false, dong_dinh: false };
+    dungeonsData = dungeonsData.map(d => ({ ...d, ...resetFields }));
+    renderDungeons();
+
+    // 2. Lưu vào Supabase/localStorage
     await DB.resetDungeons();
-    loadDungeons();
+
     alert('Đã reset tiến độ tuần thành công!');
+
+    // 3. Reload lại dữ liệu từ Supabase để đồng bộ (chạy nền)
+    loadDungeons();
   }
 }
 

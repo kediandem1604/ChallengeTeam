@@ -388,6 +388,12 @@ const DB = {
 
   async resetDungeons() {
     const resetFields = { boss1: false, boss2: false, boss3: false, boss4: false, boss5: false, boss6: false, bi_canh: false, dong_dinh: false };
+
+    // Luôn xóa localStorage trước (fallback an toàn)
+    const arr = JSON.parse(localStorage.getItem('kkd_dungeons') || '[]');
+    localStorage.setItem('kkd_dungeons', JSON.stringify(arr.map(d => ({ ...d, ...resetFields }))));
+
+    // Đồng thời update Supabase nếu có kết nối
     if (supabaseClient) {
       const { data } = await supabaseClient.from('dungeons').select('id');
       if (data) {
@@ -395,11 +401,7 @@ const DB = {
           await supabaseClient.from('dungeons').update(resetFields).eq('id', d.id);
         }
       }
-      return;
     }
-    const arr = JSON.parse(localStorage.getItem('kkd_dungeons') || '[]');
-    const resetArr = arr.map(d => ({ ...d, ...resetFields }));
-    localStorage.setItem('kkd_dungeons', JSON.stringify(resetArr));
   },
 
   // ── KE ACCOUNTS (List acc Kẹ) ──

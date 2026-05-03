@@ -13,7 +13,7 @@ function getFactionClass(phai) {
   }
 }
 
-// Chờ Supabase init xong (tối đa 3 giây) trước khi load
+// Chờ Supabase init xong (tối đa 5 giây) trước khi load
 async function waitForSupabase() {
   return new Promise(resolve => {
     if (typeof supabaseClient !== 'undefined' && supabaseClient) { resolve(); return; }
@@ -22,25 +22,53 @@ async function waitForSupabase() {
       tries++;
       if (typeof supabaseClient !== 'undefined' && supabaseClient) {
         clearInterval(iv); resolve();
-      } else if (tries >= 30) { // 3 giây
+      } else if (tries >= 50) { // 5 giây
         clearInterval(iv); resolve();
       }
     }, 100);
   });
 }
 
-async function loadDungeons() {
+// Helper hiển thị trạng thái loading
+function setLoadingMsg(msg) {
   const tbody = document.getElementById('dungeon-body');
-  const colSpan = 11;
-  if(tbody) tbody.innerHTML = `<tr><td colspan="${colSpan}" style="color:var(--t2)">Đang tải dữ liệu từ Supabase...</td></tr>`;
+  if (tbody) tbody.innerHTML = `<tr><td colspan="11" style="color:var(--t2);text-align:center;padding:1.5rem;">${msg}</td></tr>`;
+}
 
-  // Luôn chờ Supabase sẵn sàng trước khi load — không phụ thuộc trang nào mở trước
+async function loadDungeons() {
+  setLoadingMsg('⏳ Đang kết nối Supabase...');
+
+  // Chờ client khởi tạo
   await waitForSupabase();
 
-  const [members, dungeons] = await Promise.all([
-    DB.getMembers(),
-    DB.getDungeons()
-  ]);
+  // ── Retry logic: Supabase Free Tier cold start có thể mất 2-10 giây ──
+  const MAX_RETRIES = 4;
+  const RETRY_DELAY = 2500; // ms
+  let members = [], dungeons = [];
+
+  for (let attempt = 1; attempt <= MAX_RETRIES; attempt++) {
+    try {
+      [members, dungeons] = await Promise.all([
+        DB.getMembers(),
+        DB.getDungeons()
+      ]);
+    } catch (err) {
+      console.warn(`loadDungeons attempt ${attempt} error:`, err);
+    }
+
+    if (members.length > 0) break; // Thành công, thoát vòng lặp
+
+    if (attempt < MAX_RETRIES) {
+      const waitSec = Math.round(RETRY_DELAY / 1000);
+      setLoadingMsg(`⚡ Supabase đang khởi động... thử lại (${attempt}/${MAX_RETRIES - 1}) sau ${waitSec}s`);
+      await new Promise(r => setTimeout(r, RETRY_DELAY));
+    }
+  }
+
+  if (members.length === 0) {
+    setLoadingMsg('❌ Không thể tải dữ liệu từ Supabase. Vui lòng F5 để thử lại.');
+    return;
+  }
 
   const sortedMembers = [...members].reverse();
 
@@ -65,8 +93,6 @@ async function loadDungeons() {
   });
 
   renderDungeons();
-
-  // Tắt animation nặng (scanline, flicker) sau khi dữ liệu đã load
   document.body.classList.add('data-loaded');
 }
 

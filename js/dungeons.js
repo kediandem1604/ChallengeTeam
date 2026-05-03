@@ -13,10 +13,30 @@ function getFactionClass(phai) {
   }
 }
 
+// Chờ Supabase init xong (tối đa 3 giây) trước khi load
+async function waitForSupabase() {
+  return new Promise(resolve => {
+    if (typeof supabaseClient !== 'undefined' && supabaseClient) { resolve(); return; }
+    let tries = 0;
+    const iv = setInterval(() => {
+      tries++;
+      if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+        clearInterval(iv); resolve();
+      } else if (tries >= 30) { // 3 giây
+        clearInterval(iv); resolve();
+      }
+    }, 100);
+  });
+}
+
 async function loadDungeons() {
   const tbody = document.getElementById('dungeon-body');
-  if(tbody) tbody.innerHTML = '<tr><td colspan="7" style="color:var(--t2)">Đang tải dữ liệu...</td></tr>';
-  
+  const colSpan = 11;
+  if(tbody) tbody.innerHTML = `<tr><td colspan="${colSpan}" style="color:var(--t2)">Đang tải dữ liệu từ Supabase...</td></tr>`;
+
+  // Luôn chờ Supabase sẵn sàng trước khi load — không phụ thuộc trang nào mở trước
+  await waitForSupabase();
+
   const [members, dungeons] = await Promise.all([
     DB.getMembers(),
     DB.getDungeons()
@@ -37,7 +57,9 @@ async function loadDungeons() {
         ingame: m.igame || m.name, 
         phai: m.faction,
         isVip: m.isVip,
-        ngoai_cac: false, cam_cac: false, bi_canh: false, dong_dinh: false 
+        boss1: false, boss2: false, boss3: false,
+        boss4: false, boss5: false, boss6: false,
+        bi_canh: false, dong_dinh: false 
       };
     }
   });
@@ -53,7 +75,7 @@ function renderDungeons() {
   if(!tbody) return;
 
   if (dungeonsData.length === 0) {
-    tbody.innerHTML = `<tr><td colspan="7" style="text-align:center;padding:2rem;color:var(--t2)">⚡ Chưa có thành viên nào. Hãy thêm thành viên tại trang <a href="members.html" style="color:var(--c)">Thành Viên</a>.</td></tr>`;
+    tbody.innerHTML = `<tr><td colspan="11" style="text-align:center;padding:2rem;color:var(--t2)">⚡ Chưa có thành viên nào. Hãy thêm thành viên tại trang <a href="members.html" style="color:var(--c)">Thành Viên</a>.</td></tr>`;
     return;
   }
 
@@ -66,8 +88,12 @@ function renderDungeons() {
     tr.innerHTML = `
       <td><strong style="color:var(--c);font-weight:800;letter-spacing:.5px" class="${d.isVip ? 'vip-name' : ''}" data-faction="${d.phai}">${d.ingame}</strong></td>
       <td><span class="faction-tag ${getFactionClass(d.phai)}">${d.phai}</span></td>
-      <td><button class="status-btn ${d.ngoai_cac ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'ngoai_cac')">${d.ngoai_cac ? 'Xong' : 'Chưa'}</button></td>
-      <td><button class="status-btn ${d.cam_cac ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'cam_cac')">${d.cam_cac ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss1 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss1')">${d.boss1 ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss2 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss2')">${d.boss2 ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss3 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss3')">${d.boss3 ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss4 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss4')">${d.boss4 ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss5 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss5')">${d.boss5 ? 'Xong' : 'Chưa'}</button></td>
+      <td><button class="status-btn ${d.boss6 ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'boss6')">${d.boss6 ? 'Xong' : 'Chưa'}</button></td>
       <td><button class="status-btn ${d.bi_canh ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'bi_canh')">${d.bi_canh ? 'Xong' : 'Chưa'}</button></td>
       <td><button class="status-btn ${d.dong_dinh ? 'done' : ''}" onclick="toggleStatus('${d.id}', 'dong_dinh')">${d.dong_dinh ? 'Xong' : 'Chưa'}</button></td>
       <td><span style="font-size:0.8rem;color:var(--t2);font-style:italic;">Khóa</span></td>

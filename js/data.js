@@ -387,19 +387,18 @@ const DB = {
   },
 
   async resetDungeons() {
+    const resetFields = { boss1: false, boss2: false, boss3: false, boss4: false, boss5: false, boss6: false, bi_canh: false, dong_dinh: false };
     if (supabaseClient) {
-      // In a real scenario we might need to fetch all and update, or use RPC.
-      // For now, let's fetch all and update statuses to false/empty.
-      const { data } = await supabaseClient.from('dungeons').select('*');
+      const { data } = await supabaseClient.from('dungeons').select('id');
       if (data) {
         for (let d of data) {
-          await supabaseClient.from('dungeons').update({ ngoai_cac: false, cam_cac: false, bi_canh: false, dong_dinh: false }).eq('id', d.id);
+          await supabaseClient.from('dungeons').update(resetFields).eq('id', d.id);
         }
       }
       return;
     }
     const arr = JSON.parse(localStorage.getItem('kkd_dungeons') || '[]');
-    const resetArr = arr.map(d => ({ ...d, ngoai_cac: false, cam_cac: false, bi_canh: false, dong_dinh: false }));
+    const resetArr = arr.map(d => ({ ...d, ...resetFields }));
     localStorage.setItem('kkd_dungeons', JSON.stringify(resetArr));
   },
 

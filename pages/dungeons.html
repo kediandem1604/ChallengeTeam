@@ -28,12 +28,15 @@
       contain: layout style;
     }
 
-    .dungeon-container{max-width:1200px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:10}
-    .dungeon-table{width:100%;border-spacing:0 8px;border-collapse:separate;margin-top:1.5rem;background:transparent;min-width:900px}
+    .dungeon-container{max-width:1400px;margin:0 auto;padding:2rem 1.5rem;position:relative;z-index:10}
+    .dungeon-table{width:100%;border-spacing:0 8px;border-collapse:separate;margin-top:1.5rem;background:transparent;min-width:1100px}
     .dungeon-table th{
       color:var(--c);font-size:.82rem;font-weight:800;text-transform:uppercase;
-      padding:.9rem 1rem;letter-spacing:1.5px;background:transparent;border:none;
+      padding:.7rem .8rem;letter-spacing:1px;background:transparent;border:none;
+      vertical-align:middle;text-align:center;
     }
+    .dungeon-table thead tr:first-child th { padding-bottom:.3rem; }
+    .dungeon-table thead tr:nth-child(2) th { padding-top:.2rem; }
     .dungeon-table td{
       background:rgba(7,7,26,.65);padding:.9rem 1rem;color:var(--text);font-size:.88rem;
       border-top:1px solid rgba(0,242,255,.15);border-bottom:1px solid rgba(0,242,255,.15);
@@ -266,13 +269,21 @@
     <table class="dungeon-table" id="dungeon-table">
       <thead>
         <tr>
-          <th style="width: 15%">Ingame</th>
-          <th style="width: 15%">Phái</th>
-          <th style="width: 15%">Ngoại Các</th>
-          <th style="width: 15%">Cấm Các</th>
-          <th style="width: 15%">Bí Cảnh</th>
-          <th style="width: 15%">Động Đình + Kiếm Mộng</th>
-          <th style="width: 10%">Hành Động</th>
+          <th style="width:11%" rowspan="2">Ingame</th>
+          <th style="width:9%" rowspan="2">Phái</th>
+          <th colspan="3" style="color:#00f2ff;border-bottom:1px solid rgba(0,242,255,.3);">⚔ Ngoại Các</th>
+          <th colspan="3" style="color:#bf00ff;border-bottom:1px solid rgba(191,0,255,.3);">🔒 Cấm Các</th>
+          <th style="width:9%" rowspan="2">Bí Cảnh</th>
+          <th style="width:11%" rowspan="2">Động Đình + Kiếm Mộng</th>
+          <th style="width:8%" rowspan="2">Hành Động</th>
+        </tr>
+        <tr>
+          <th style="color:#00f2ff;font-size:.75rem;">Boss 1</th>
+          <th style="color:#00f2ff;font-size:.75rem;">Boss 2</th>
+          <th style="color:#00f2ff;font-size:.75rem;">Boss 3</th>
+          <th style="color:#bf00ff;font-size:.75rem;">Boss 4</th>
+          <th style="color:#bf00ff;font-size:.75rem;">Boss 5</th>
+          <th style="color:#bf00ff;font-size:.75rem;">Boss 6</th>
         </tr>
       </thead>
       <tbody id="dungeon-body">
@@ -280,7 +291,7 @@
       </tbody>
       <tfoot>
         <tr>
-          <td colspan="7" style="text-align:center;padding:1rem;color:var(--t2);font-size:.82rem;font-style:italic;">
+          <td colspan="11" style="text-align:center;padding:1rem;color:var(--t2);font-size:.82rem;font-style:italic;">
             ⚡ Danh sách được đồng bộ tự động từ trang <a href="members.html" style="color:var(--c)">Thành Viên</a>. Thêm thành viên mới tại đó.
           </td>
         </tr>

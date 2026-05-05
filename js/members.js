@@ -126,6 +126,7 @@ function showToast(msg, duration = 3500) {
 // ─── RENDER MẠNG LƯỚI QUAN HỆ (VIS-NETWORK) ───
 let network = null;
 let networkEdges = null;
+let networkNodes = null; // expose để có thể update node image từ bên ngoài
 let allMembersCache = [];
 
 // ─── HONEYCOMB STATE ───
@@ -349,6 +350,7 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
   }));
 
   networkEdges = edges;
+  networkNodes = nodes; // expose globally
 
   const options = {
     physics: hasSaved ? false : {
@@ -403,6 +405,47 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
   network.on('blurNode', () => {
     updateKimLanVisibility();
   });
+
+  // Load avatar trong background sau khi network đã hiện
+  setTimeout(() => loadAvatarsBackground(), 200);
+}
+
+// ─── BACKGROUND AVATAR LOADER ───
+// Fetch avatar riêng sau khi network đã render — không block UI
+async function loadAvatarsBackground() {
+  if (!supabaseClient || !networkNodes) return;
+  try {
+    // Chỉ lấy 2 cột nhẹ (id + avatar) — tránh timeout
+    const { data, error } = await supabaseClient
+      .from('members')
+      .select('id, avatar')
+      .not('avatar', 'is', null);
+
+    if (error || !data) return;
+
+    data.forEach(row => {
+      if (!row.avatar || row.avatar.length < 20) return;
+
+      // Cập nhật cache
+      const m = allMembersCache.find(x => String(x.id) === String(row.id));
+      if (!m) return;
+      m.avatar = row.avatar;
+
+      // Xóa hexImgCache cũ (có thể đang dùng key không có avatar)
+      Object.keys(hexImgCache).forEach(k => {
+        if (k.startsWith(String(m.id) + '_')) delete hexImgCache[k];
+      });
+
+      // Vẽ lại hex image và cập nhật node trên mạng lưỚi
+      generateHexImage(m, url => {
+        if (networkNodes) {
+          try { networkNodes.update([{ id: m.id, image: url }]); } catch(e) {}
+        }
+      });
+    });
+  } catch(e) {
+    console.warn('⚠ loadAvatarsBackground error:', e);
+  }
 }
 
 function updateKimLanVisibility(hoverNodeId = null) {

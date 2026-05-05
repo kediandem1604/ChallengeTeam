@@ -3,9 +3,12 @@
 ═══════════════════════════════════════════════ */
 
 let supabaseClient = null;
+let _supabaseInitPromise = null;
 
 function initSupabase() {
-  if (!SUPABASE_READY || typeof supabase === 'undefined') return false;
+  if (!SUPABASE_READY) return false;
+  if (typeof supabase === 'undefined') return false;
+  if (supabaseClient) return true;
   try {
     supabaseClient = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
     console.log('%c✔ Supabase connected!', 'color:#c9a84c;font-weight:bold;');
@@ -16,24 +19,36 @@ function initSupabase() {
   }
 }
 
-// Chờ kết nối (max 2 giây)
-async function waitForConnection() {
-  if (supabaseClient) return true;
-  if (!SUPABASE_READY) return false;
-  
-  return new Promise(resolve => {
-    let attempts = 0;
+// Đảm bảo Supabase đã init (chờ SDK CDN load xong nếu cần, max 5 giây)
+function ensureSupabase() {
+  if (_supabaseInitPromise) return _supabaseInitPromise;
+  _supabaseInitPromise = new Promise(resolve => {
+    if (supabaseClient) { resolve(true); return; }
+    if (!SUPABASE_READY) { resolve(false); return; }
+
+    let elapsed = 0;
     const interval = setInterval(() => {
-      attempts++;
+      elapsed += 50;
+      // Thử khởi tạo nếu SDK đã có
+      if (typeof supabase !== 'undefined' && !supabaseClient) {
+        initSupabase();
+      }
       if (supabaseClient) {
         clearInterval(interval);
         resolve(true);
-      } else if (attempts > 20) { // Đợi tối đa 2s
+      } else if (elapsed >= 5000) { // max 5 giây
         clearInterval(interval);
+        console.warn('⚠ Supabase không kết nối được sau 5s, dùng localStorage.');
         resolve(false);
       }
-    }, 100);
+    }, 50);
   });
+  return _supabaseInitPromise;
+}
+
+// Alias để tương thích code cũ
+async function waitForConnection() {
+  return ensureSupabase();
 }
 
 // ─── HELPER: Timestamp ───
@@ -228,11 +243,34 @@ const DB = {
   },
 
   // ── MEMBERS (Thành Viên) ──
+
+  // Chỉ lấy metadata nhẹ (KHÔNG bao gồm avatar base64) — dùng cho trang chủ
+  async getMembersLight() {
+    await waitForConnection();
+    if (supabaseClient) {
+      const { data, error } = await supabaseClient
+        .from('members')
+        .select('id, name, igame, faction, likes, rating_sum, rating_count, isVip, created_at')
+        .order('created_at', { ascending: false });
+      if (data) return data;
+      if (error) console.warn('⚠ getMembersLight error:', error);
+    }
+    // fallback localStorage (loại bỏ avatar khỏi kết quả)
+    return JSON.parse(localStorage.getItem('kkd_members') || '[]').map(m => {
+      const { avatar, ...rest } = m; return rest;
+    });
+  },
+
+  // Lấy đầy đủ (bao gồm avatar) — dùng cho trang thành viên
   async getMembers() {
     await waitForConnection();
     if (supabaseClient) {
-      const { data } = await supabaseClient.from('members').select('*').order('created_at', { ascending: false });
+      const { data, error } = await supabaseClient
+        .from('members')
+        .select('*')
+        .order('created_at', { ascending: false });
       if (data) return data;
+      if (error) console.warn('⚠ getMembers error:', error);
     }
     return JSON.parse(localStorage.getItem('kkd_members') || '[]');
   },
@@ -483,8 +521,13 @@ const DB = {
   }
 };
 
-// ─── Khởi tạo ngay lập tức ───
-if (typeof SUPABASE_READY !== 'undefined') initSupabase();
+// ─── Khởi tạo ngay lập tức (và retry nếu SDK chưa load) ───
+if (typeof SUPABASE_READY !== 'undefined') {
+  if (!initSupabase()) {
+    // SDK CDN chưa load xong → đợi và thử lại
+    ensureSupabase();
+  }
+}
 
 // ─── GLOBAL UI HELPER ───
 window.toggleMenu = function() {

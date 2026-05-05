@@ -2,27 +2,64 @@
    MEMBERS LOGIC — Kiếm Khách Đoàn
 ═══════════════════════════════════════════════ */
 
+// ─── NÉN ẢNH (Canvas resize + JPEG compress) ───
+// maxSize: chiều rộng/cao tối đa (px), quality: 0–1
+function compressImage(file, maxSize = 256, quality = 0.75) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onerror = reject;
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onerror = reject;
+      img.onload = () => {
+        // Tính toán kích thước mới (giữ tỷ lệ aspect ratio)
+        let w = img.width, h = img.height;
+        if (w > h) { if (w > maxSize) { h = Math.round(h * maxSize / w); w = maxSize; } }
+        else       { if (h > maxSize) { w = Math.round(w * maxSize / h); h = maxSize; } }
 
+        const canvas = document.createElement('canvas');
+        canvas.width = w;
+        canvas.height = h;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, w, h);
+
+        // Xuất JPEG nén
+        const compressed = canvas.toDataURL('image/jpeg', quality);
+        const sizeBefore = Math.round(e.target.result.length * 3 / 4 / 1024);
+        const sizeAfter  = Math.round(compressed.length  * 3 / 4 / 1024);
+        console.log(`🖼️ Ảnh nén: ${sizeBefore}KB → ${sizeAfter}KB (${w}×${h}px)`);
+        resolve(compressed);
+      };
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  });
+}
 
 // ─── XỬ LÝ UPLOAD ───
 let currentAvatarBase64 = "";
 
-function handleAvatarUpload(input) {
+async function handleAvatarUpload(input) {
   const file = input.files[0];
   if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    currentAvatarBase64 = e.target.result;
-    console.log("✔ Đã nạp ảnh đại diện (Base64 ready)");
+  showToast('⏳ Đang xử lý ảnh...');
+  try {
+    currentAvatarBase64 = await compressImage(file, 256, 0.75);
+    console.log("✔ Đã nạp ảnh đại diện (Base64 compressed)");
     const previewBox = document.getElementById('avatar-preview-box');
     const previewImg = document.getElementById('avatar-preview-img');
     if (previewBox && previewImg) {
       previewImg.src = currentAvatarBase64;
       previewBox.style.display = 'block';
     }
-  };
-  reader.readAsDataURL(file);
+  } catch(err) {
+    console.warn('Nén ảnh thất bại, dùng ảnh gốc:', err);
+    // fallback: đọc nguyên gốc nếu compress lỗi
+    const reader = new FileReader();
+    reader.onload = (e) => { currentAvatarBase64 = e.target.result; };
+    reader.readAsDataURL(file);
+  }
 }
 
 // ─── THÊM THÀNH VIÊN ───
@@ -33,7 +70,7 @@ async function submitMember() {
   const avatar = currentAvatarBase64;
 
   const vipCode = document.getElementById('mem-vip') ? document.getElementById('mem-vip').value.trim() : '';
-  const isVip = vipCode.toUpperCase() === 'VIP2026' || vipCode.toUpperCase() === 'SẬPGAME'; // Example secret codes
+  const isVip = vipCode.toUpperCase() === 'VIP2026' || vipCode.toUpperCase() === 'SẦPGAME'; // Example secret codes
 
   if (!name || !faction) {
     showToast('⚠ Vui lòng nhập Tên và chọn Phái!');
@@ -54,6 +91,37 @@ async function submitMember() {
   if (typeof supabaseClient === 'undefined' || !supabaseClient) renderMembers();
 }
 
+// ─── TOAST NOTIFICATION (dùng cho trang Thành Viên) ───
+function showToast(msg, duration = 3500) {
+  let t = document.getElementById('members-toast');
+  if (!t) {
+    t = document.createElement('div');
+    t.id = 'members-toast';
+    t.style.cssText = [
+      'position:fixed', 'bottom:2rem', 'left:50%', 'transform:translateX(-50%) translateY(20px)',
+      'background:rgba(7,7,26,0.95)', 'border:1px solid var(--c)',
+      'color:var(--c)', 'padding:0.75rem 1.5rem', 'border-radius:8px',
+      'font-family:"Be Vietnam Pro",sans-serif', 'font-size:0.9rem', 'font-weight:600',
+      'z-index:99999', 'box-shadow:0 0 20px rgba(0,242,255,0.3)',
+      'opacity:0', 'transition:opacity 0.3s ease, transform 0.3s ease',
+      'pointer-events:none', 'white-space:nowrap'
+    ].join(';');
+    document.body.appendChild(t);
+  }
+  t.textContent = msg;
+  // Hiện
+  requestAnimationFrame(() => {
+    t.style.opacity = '1';
+    t.style.transform = 'translateX(-50%) translateY(0)';
+  });
+  // Ẩn sau duration ms
+  clearTimeout(t._timer);
+  t._timer = setTimeout(() => {
+    t.style.opacity = '0';
+    t.style.transform = 'translateX(-50%) translateY(20px)';
+  }, duration);
+}
+
 // ─── RENDER DANH SÁCH ───
 // ─── RENDER MẠNG LƯỚI QUAN HỆ (VIS-NETWORK) ───
 let network = null;
@@ -72,7 +140,7 @@ let hcFromCell = null;
 const relColors = {
   sudo: { color: '#ff9900', dashes: false, label: 'Sư Đồ' },
   triki: { color: '#ff00ff', dashes: false, label: 'Tri Kỉ' },
-  banthan: { color: '#ffd700', dashes: false, label: 'Bạn Thân' },
+  banthan: { color: '#ffd700', dashes: false, label: 'Cục Nợ' },
   kimlan: { color: '#00f2ff', dashes: false, label: 'Kim Lan' },
   clone: { color: '#888888', dashes: true, label: 'Clone' },
   nhat: { color: '#00ff88', dashes: true, label: 'Nhặt từ PB' },
@@ -148,8 +216,28 @@ async function renderMembers(customItems = null) {
   const container = document.getElementById('network-graph');
   if (!container) return;
 
+  // Hiện skeleton ngay lập tức
+  if (!customItems) {
+    container.innerHTML = `<div style="height:100%;display:flex;flex-direction:column;justify-content:center;align-items:center;gap:1rem;">
+      <div style="width:48px;height:48px;border:3px solid var(--c);border-top-color:transparent;border-radius:50%;animation:spin 0.8s linear infinite;"></div>
+      <p style="color:var(--t2);font-size:0.9rem;">⏳ Đang kết nối Supabase...</p>
+    </div>`;
+  }
+
   try {
-    const allItems = customItems || await DB.getMembers();
+    // B1: Fetch metadata nhẹ + relations + positions song song (không có avatar nặng)
+    const [allItems, allRels, savedPosArr] = await Promise.all([
+      customItems ? Promise.resolve(customItems) : DB.getMembersLight(),
+      DB.getRelations(),
+      DB.getHoneycombPositions()
+    ]);
+
+    // Merge avatar từ cache cũ vào data mới — tránh mất avatar sau re-render
+    const prevCache = allMembersCache;
+    allItems.forEach(newItem => {
+      const old = prevCache.find(c => String(c.id) === String(newItem.id));
+      if (old && old.avatar) newItem.avatar = old.avatar;
+    });
     allMembersCache = allItems;
 
     // Cập nhật dropdowns
@@ -178,12 +266,6 @@ async function renderMembers(customItems = null) {
       return;
     }
 
-    // Fetch relations + saved positions song song
-    const [allRels, savedPosArr] = await Promise.all([
-      DB.getRelations(),
-      DB.getHoneycombPositions()
-    ]);
-
     // Build position lookup {memberId: {x, y}}
     const savedPos = {};
     savedPosArr.forEach(p => {
@@ -193,6 +275,7 @@ async function renderMembers(customItems = null) {
     const hasSaved = Object.keys(savedPos).length > 0;
 
     // Pre-generate tất cả hex images trước khi build network
+    // Dùng cache để tránh re-generate khi re-render
     let pending = allItems.length;
     const hexImages = {};
     allItems.forEach(m => {
@@ -259,7 +342,7 @@ function buildNetwork(container, allItems, allRels, savedPos, hasSaved, hexImage
       color: { color: conf.color, highlight: '#ffffff' },
       dashes: conf.dashes,
       font: { color: conf.color, size: 12, strokeWidth: 2, strokeColor: '#000', align: 'horizontal' },
-      arrows: (r.type === 'sudo' || r.type === 'clone') ? 'to' : '',
+      arrows: conf.arrows || ((r.type === 'sudo' || r.type === 'clone') ? 'to' : (r.type === 'banthan' || r.type === 'conno') ? { to: { enabled: true, scaleFactor: 1.2 } } : ''),
       smooth: smooth,
       hidden: isKimLan
     };
@@ -397,7 +480,7 @@ async function addRelation() {
 }
 
 // ─── HIỂN THỊ HỒ SƠ ───
-function showMemberModal(id) {
+async function showMemberModal(id) {
   const item = allMembersCache.find(m => String(m.id) === String(id));
   if (!item) return;
 
@@ -419,14 +502,13 @@ function showMemberModal(id) {
   const vipLabel = item.isVip ? '✨ Tắt VIP' : '✨ Bật VIP';
   const vipBtnClass = item.isVip ? 'btn-sword btn-secondary' : 'btn-sword';
 
+  // Hiển thị modal ngay (avatar placeholder trước)
   content.innerHTML = `
     <!-- Avatar + nút chỉnh sửa -->
     <div style="display: flex; justify-content: center; margin-bottom: 1rem; width: 100%;">
       <div style="position:relative; width:88px; height:88px;">
         <div class="member-avatar" style="margin:0; width:100%; height:100%;">
-          ${(item.avatar && item.avatar.length > 10)
-      ? `<img id="modal-avatar-img" src="${item.avatar}" alt="${item.name}" onerror="this.src='https://via.placeholder.com/150?text=Error'">`
-      : `<div class="avatar-placeholder">👥</div>`}
+          <div class="avatar-placeholder" id="modal-avatar-wrap">👥</div>
         </div>
         <label for="modal-avatar-input" title="Đổi ảnh đại diện" style="
           position:absolute; bottom:-4px; right:-4px;
@@ -462,12 +544,69 @@ function showMemberModal(id) {
         ${vipLabel}
       </button>
     </div>
-    <div style="margin-top: 1.5rem;">
+    <div style="margin-top: 1.5rem; display:flex; gap:0.5rem; justify-content:center; flex-wrap:wrap;">
       <button class="btn-delete" style="font-size: 0.8rem; padding: 0.4rem 0.8rem;" onclick="deleteMember('${item.id}')">🗑 Xóa Hồ Sơ</button>
+      <button id="btn-download-avatar" style="
+        font-size: 0.8rem; padding: 0.4rem 0.9rem;
+        background: rgba(0,242,255,0.1); border: 1px solid rgba(0,242,255,0.4);
+        color: var(--c); border-radius: 6px; cursor: pointer;
+        font-family: 'Be Vietnam Pro', sans-serif; font-weight: 600;
+        transition: 0.2s; opacity: 0.4; pointer-events: none;
+      " onclick="downloadMemberAvatar('${item.id}', '${item.name || 'avatar'}')">📥 Tải ảnh xuống</button>
     </div>
   `;
 
   modal.style.display = 'flex';
+
+  // Hàm bật nút tải sau khi avatar đã load
+  function enableDownloadBtn() {
+    const btn = document.getElementById('btn-download-avatar');
+    if (btn) { btn.style.opacity = '1'; btn.style.pointerEvents = 'auto'; }
+  }
+
+  // Fetch avatar riêng (chỉ khi chưa có trong cache)
+  if (!item.avatar && supabaseClient) {
+    supabaseClient.from('members').select('avatar').eq('id', item.id).single()
+      .then(({ data }) => {
+        if (data && data.avatar) {
+          item.avatar = data.avatar; // lưu vào cache
+          const wrap = document.getElementById('modal-avatar-wrap');
+          if (wrap) {
+            wrap.outerHTML = `<img id="modal-avatar-img" src="${data.avatar}" alt="${item.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">`;
+          }
+          enableDownloadBtn();
+        }
+      });
+  } else if (item.avatar && item.avatar.length > 10) {
+    const wrap = document.getElementById('modal-avatar-wrap');
+    if (wrap) {
+      wrap.outerHTML = `<img id="modal-avatar-img" src="${item.avatar}" alt="${item.name}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;" onerror="this.style.display='none'">`;
+    }
+    enableDownloadBtn();
+  }
+}
+
+// ─── TẢI ẢNH XUỐNG TỪ BASE64 ───
+function downloadMemberAvatar(memberId, memberName) {
+  const item = allMembersCache.find(m => String(m.id) === String(memberId));
+  if (!item || !item.avatar) {
+    showToast('⚠ Chưa có ảnh để tải!');
+    return;
+  }
+
+  // Xác định đuôi file từ MIME type
+  const mime = item.avatar.split(';')[0].split(':')[1] || 'image/jpeg';
+  const ext = mime === 'image/png' ? 'png' : mime === 'image/gif' ? 'gif' : 'jpg';
+  const filename = `avatar_${memberName.replace(/\s+/g, '_')}.${ext}`;
+
+  // Tạo link download tạm thời
+  const a = document.createElement('a');
+  a.href = item.avatar;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  showToast(`✔ Đã tải ảnh: ${filename}`);
 }
 
 // ─── TOGGLE VIP ───
@@ -497,23 +636,50 @@ async function toggleVip(id, currentVip) {
 }
 
 // ─── ĐỔI AVATAR TỪ MODAL ───
-function updateMemberAvatar(id, input) {
+async function updateMemberAvatar(id, input) {
   const file = input.files[0];
   if (!file) return;
-  const reader = new FileReader();
-  reader.onload = async function (e) {
-    const base64 = e.target.result;
-    await DB.updateMember(id, { avatar: base64 });
-    const m = allMembersCache.find(x => String(x.id) === String(id));
-    if (m) m.avatar = base64;
-    // Cập nhật ảnh trực tiếp trong modal không cần đóng
-    const img = document.getElementById('modal-avatar-img');
-    if (img) img.src = base64;
-    showToast('✔ Đã cập nhật ảnh đại diện!');
-    renderMembers();
-  };
-  reader.readAsDataURL(file);
+
+  showToast('⏳ Đang nén ảnh...');
+  let base64;
+  try {
+    base64 = await compressImage(file, 256, 0.75);
+  } catch(err) {
+    console.warn('Nén thất bại, dùng ảnh gốc');
+    base64 = await new Promise(res => {
+      const r = new FileReader();
+      r.onload = e => res(e.target.result);
+      r.readAsDataURL(file);
+    });
+  }
+
+  await DB.updateMember(id, { avatar: base64 });
+
+  // Cập nhật trong allMembersCache
+  const m = allMembersCache.find(x => String(x.id) === String(id));
+  if (m) m.avatar = base64;
+
+  // Xóa hexImgCache của member này → sẽ được vẽ lại với avatar mới
+  Object.keys(hexImgCache).forEach(k => {
+    if (k.startsWith(String(id) + '_')) delete hexImgCache[k];
+  });
+
+  // Cập nhật ảnh trực tiếp trong modal ngay lập tức
+  const img = document.getElementById('modal-avatar-img');
+  if (img) img.src = base64;
+  const wrap = document.getElementById('modal-avatar-wrap');
+  if (wrap) wrap.outerHTML = `<img id="modal-avatar-img" src="${base64}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+
+  // Bật nút download
+  const dlBtn = document.getElementById('btn-download-avatar');
+  if (dlBtn) { dlBtn.style.opacity = '1'; dlBtn.style.pointerEvents = 'auto'; }
+
+  showToast('✔ Đổi ảnh đại diện thành công!');
+
+  // Re-render mạng lưới (avatar cache đã được merge, hex image sẽ dùng ảnh mới)
+  renderMembers();
 }
+
 
 // ─── TƯƠNG TÁC ───
 async function likeMember(id) {
@@ -723,15 +889,17 @@ function dropToRemove() {
 document.addEventListener('DOMContentLoaded', () => {
   initParticles();
   initNavbar();
-  renderMembers();
   switchView('network');
+
   if (window.location.hash === '#add') {
     setTimeout(() => document.getElementById('add').scrollIntoView({ behavior: 'smooth' }), 500);
   }
-  setTimeout(() => {
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+
+  // Chờ Supabase sẵn sàng rồi mới render → đảm bảo dữ liệu từ đám mây
+  ensureSupabase().then(() => {
+    renderMembers();
+    if (supabaseClient) {
       DB.onMembersChange(items => renderMembers(items));
     }
-  }, 500);
+  });
 });
-

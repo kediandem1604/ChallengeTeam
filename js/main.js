@@ -176,8 +176,21 @@ async function renderHomeVideos(customItems = null) {
 async function renderHomeMembers(customItems = null) {
   const box = document.getElementById('members-preview');
   if (!box) return;
-  
-  const allItems = customItems || await DB.getMembers();
+
+  // Skeleton loading
+  if (!customItems) {
+    box.innerHTML = Array(4).fill(0).map(() => `
+      <div class="member-card" style="opacity:0.4;pointer-events:none;">
+        <div class="member-avatar"><div class="avatar-placeholder" style="animation:pulse 1.5s infinite;">👥</div></div>
+        <div class="member-info">
+          <div style="height:1rem;width:70%;background:rgba(255,255,255,0.1);border-radius:4px;margin-bottom:0.5rem;"></div>
+          <div style="height:0.8rem;width:50%;background:rgba(255,255,255,0.07);border-radius:4px;"></div>
+        </div>
+      </div>
+    `).join('');
+  }
+
+  const allItems = customItems || await DB.getMembersLight();
   // Sort by likes, take top 4
   const items = allItems.sort((a, b) => (b.likes || 0) - (a.likes || 0)).slice(0, 4);
   
@@ -196,7 +209,7 @@ async function renderHomeMembers(customItems = null) {
     el.className = `member-card ${item.isVip ? 'vip-card' : ''}`;
     el.innerHTML = `
       <div class="member-avatar">
-        ${item.avatar ? `<img src="${item.avatar}" alt="${item.name}">` : `<div class="avatar-placeholder">👥</div>`}
+        ${item.avatar ? `<img src="${item.avatar}" alt="${item.name}" loading="lazy">` : `<div class="avatar-placeholder">👥</div>`}
       </div>
       <div class="member-info">
         <div class="member-name ${item.isVip ? 'vip-name' : ''}" data-faction="${item.faction}">${item.name}</div>
@@ -242,18 +255,20 @@ document.addEventListener('DOMContentLoaded', () => {
   initPetals();
   initNavbar();
   initObserver();
-  
-  // Render initial load
+
+  // Render news/videos ngay (có fallback localStorage)
   renderHomeNews();
   renderHomeVideos();
-  renderHomeMembers();
-  
-  // Set up real-time listeners if Supabase is available
-  setTimeout(() => {
-    if (typeof supabaseClient !== 'undefined' && supabaseClient) {
+
+  // Render members: chờ Supabase sẵn sàng trước để đảm bảo data được lấy từ đám mây
+  ensureSupabase().then(() => {
+    renderHomeMembers();
+
+    // Set up real-time listeners sau khi Supabase đã sẵn sàng
+    if (supabaseClient) {
       DB.onNewsChange(items => renderHomeNews(items));
       DB.onVideosChange(items => renderHomeVideos(items));
       DB.onMembersChange(items => renderHomeMembers(items));
     }
-  }, 1000); // Wait for Supabase to initialize
+  });
 });

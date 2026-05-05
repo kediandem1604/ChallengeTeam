@@ -238,6 +238,14 @@
       text-align: center;
       line-height: 1.2;
     }
+
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 0.4; }
+      50% { opacity: 0.8; }
+    }
   </style>
 </head>
 
@@ -325,7 +333,7 @@
             <select id="rel-type">
               <option value="sudo">📜 Sư Đồ (Màu Cam)</option>
               <option value="triki">🌸 Tri Kỉ (Hồng)</option>
-              <option value="banthan">🤝 Bạn Thân (Vàng)</option>
+              <option value="banthan">💰 Cục Nợ (Vàng)</option>
               <option value="kimlan">⚔️ Kim Lan (Xanh Ngọc)</option>
               <option value="kimlancu">💔 Kim Lan Cũ (Xám Xanh)</option>
               <option value="clone">🎭 Clone (Xám)</option>
@@ -428,9 +436,9 @@
 
   <!-- Supabase SDK -->
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-  <script src="../js/supabase-config.js?v=2"></script>
-  <script src="../js/data.js?v=2"></script>
-  <script src="../js/members.js?v=2"></script>
+  <script src="../js/supabase-config.js?v=8"></script>
+  <script src="../js/data.js?v=8"></script>
+  <script src="../js/members.js?v=8"></script>
 </body>
 
 </html>
